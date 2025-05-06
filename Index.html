@@ -1,0 +1,559 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ứng dụng Ghi chú</title>
+    <style>
+        :root {
+            --primary-color: #4285f4;
+            --secondary-color: #34a853;
+            --accent-color: #fbbc05;
+            --danger-color: #ea4335;
+            --background-color: #f8f9fa;
+            --card-color: #ffffff;
+            --text-color: #202124;
+            --border-radius: 8px;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --note-box-margin: 10px;
+            --note-box-padding: 15px;
+            --note-box-height: 80px;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            max-width: 100%;
+            height: 100vh;
+            padding: 16px;
+            overflow: hidden;
+        }
+        
+        .title {
+            text-align: center;
+            color: var(--primary-color);
+            margin: 10px 0;
+            font-size: 24px;
+        }
+        
+        .notes-area {
+            flex: 1;
+            background-color: var(--card-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 16px;
+            padding: 16px;
+            overflow-y: auto;
+            min-height: 60vh;
+        }
+        
+        #notesDisplay {
+            display: flex;
+            flex-direction: column;
+            gap: var(--note-box-margin);
+            width: 100%;
+        }
+        
+        .note-box {
+            position: relative;
+            background-color: #e8f0fe;
+            border: 2px solid var(--primary-color);
+            border-radius: var(--border-radius);
+            padding: var(--note-box-padding);
+            margin: 0;
+            min-height: var(--note-box-height);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+        
+        .note-box:hover {
+            background-color: #d2e3fc;
+        }
+        
+        .note-text {
+            font-weight: 500;
+            flex-grow: 1;
+            padding-right: 100px;
+            outline: none;
+            cursor: text;
+        }
+        
+        .note-text[contenteditable]:focus {
+            background-color: #fff;
+            border-radius: 4px;
+            padding: 4px;
+        }
+        
+        .note-controls {
+            position: absolute;
+            right: var(--note-box-padding);
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            color: white;
+            border: none;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        
+        .btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .remove-btn {
+            background-color: var(--danger-color);
+        }
+        
+        .speak-btn {
+            background-color: var(--accent-color);
+        }
+        
+        .input-controls {
+            background-color: var(--card-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 16px;
+        }
+        
+        .input-area {
+            display: flex;
+            margin-bottom: 16px;
+        }
+        
+        #textInput {
+            flex-grow: 1;
+            padding: 12px 16px;
+            border: 2px solid var(--primary-color);
+            border-radius: var(--border-radius) 0 0 var(--border-radius);
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        #textInput:focus {
+            border-color: var(--secondary-color);
+        }
+        
+        #postButton {
+            padding: 12px 24px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        #postButton:hover {
+            background-color: #3367d6;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .font-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .font-size-label {
+            font-weight: bold;
+            color: var(--text-color);
+        }
+        
+        #fontSize {
+            width: 60px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            text-align: center;
+        }
+        
+        .file-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .file-button {
+            padding: 8px 16px;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        .file-button:hover {
+            background-color: #2d9249;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 0;
+            color: #757575;
+            font-style: italic;
+        }
+        
+        @media (max-width: 1024px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .font-controls, .file-controls {
+                justify-content: center;
+            }
+            
+            .file-controls {
+                margin-top: 10px;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 8px;
+            }
+            
+            .title {
+                font-size: 20px;
+            }
+            
+            .notes-area {
+                min-height: 50vh;
+            }
+            
+            .input-area {
+                flex-direction: column;
+            }
+            
+            #textInput {
+                border-radius: var(--border-radius) var(--border-radius) 0 0;
+            }
+            
+            #postButton {
+                border-radius: 0 0 var(--border-radius) var(--border-radius);
+            }
+            
+            .note-controls {
+                flex-direction: column;
+                right: 8px;
+                gap: 5px;
+            }
+            
+            .btn {
+                width: 30px;
+                height: 30px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">Ứng dụng Ghi chú</h1>
+        
+        <div class="notes-area">
+            <div id="notesDisplay">
+                <div class="empty-state">Chưa có ghi chú nào. Hãy nhập nội dung bên dưới để bắt đầu.</div>
+            </div>
+        </div>
+        
+        <div class="input-controls">
+            <div class="input-area">
+                <input type="text" id="textInput" placeholder="Nhập ghi chú của bạn...">
+                <button id="postButton">Đăng</button>
+            </div>
+            
+            <div class="controls">
+                <div class="font-controls">
+                    <span class="font-size-label">Cỡ chữ:</span>
+                    <input type="number" id="fontSize" min="12" max="128" value="48">
+                
+                
+                    <span   class="file-controls">
+                        <button id="exportBtn" class="file-button">Xuất ghi chú</button>
+                        <button id="importBtn" class="file-button">Nhập ghi chú</button>
+                        <input type="file" id="fileInput" accept=".json">
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const textInput = document.getElementById('textInput');
+            const postButton = document.getElementById('postButton');
+            const notesDisplay = document.getElementById('notesDisplay');
+            const fontSizeInput = document.getElementById('fontSize');
+            const exportBtn = document.getElementById('exportBtn');
+            const importBtn = document.getElementById('importBtn');
+            const fileInput = document.getElementById('fileInput');
+            
+            // Biến toàn cục
+            const speechSynth = window.speechSynthesis;
+            
+            // Đăng ghi chú mới
+            function postNote() {
+                const text = textInput.value.trim();
+                if (text) {
+                    const emptyState = notesDisplay.querySelector('.empty-state');
+                    if (emptyState) {
+                        notesDisplay.removeChild(emptyState);
+                    }
+                    
+                    addNoteBox(text, fontSizeInput.value);
+                    
+                    textInput.value = '';
+                    textInput.focus();
+                    
+                    const notesArea = document.querySelector('.notes-area');
+                    notesArea.scrollTop = notesArea.scrollHeight;
+                }
+            }
+            
+            // Thêm ghi chú vào display
+            function addNoteBox(text, fontSize) {
+                const noteBox = document.createElement('div');
+                noteBox.className = 'note-box';
+                
+                // Lưu dữ liệu
+                noteBox.dataset.text = text;
+                noteBox.dataset.fontSize = fontSize;
+                
+                const noteText = document.createElement('span');
+                noteText.className = 'note-text';
+                noteText.textContent = text;
+                noteText.contentEditable = true;
+                noteText.style.fontSize = fontSize + 'px';
+                
+                // Cập nhật dataset khi chỉnh sửa nội dung
+                noteText.addEventListener('input', function() {
+                    noteBox.dataset.text = noteText.textContent.trim();
+                });
+                
+                const noteControls = document.createElement('div');
+                noteControls.className = 'note-controls';
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'btn remove-btn';
+                removeBtn.innerHTML = 'X';
+                removeBtn.title = 'Xóa';
+                removeBtn.addEventListener('click', function() {
+                    notesDisplay.removeChild(noteBox);
+                    if (notesDisplay.children.length === 0) {
+                        showEmptyState();
+                    }
+                });
+                
+                const speakBtn = document.createElement('button');
+                speakBtn.className = 'btn speak-btn';
+                speakBtn.innerHTML = '🔊';
+                speakBtn.title = 'Đọc';
+                speakBtn.addEventListener('click', function() {
+                    speakNote(noteBox.dataset.text);
+                });
+                
+                noteControls.appendChild(removeBtn);
+                noteControls.appendChild(speakBtn);
+                
+                noteBox.appendChild(noteText);
+                noteBox.appendChild(noteControls);
+                
+                notesDisplay.appendChild(noteBox);
+            }
+            
+            // Hiển thị trạng thái trống
+            function showEmptyState() {
+                const emptyState = document.createElement('div');
+                emptyState.className = 'empty-state';
+                emptyState.textContent = 'Chưa có ghi chú nào. Hãy nhập nội dung bên dưới để bắt đầu.';
+                notesDisplay.appendChild(emptyState);
+            }
+            
+            // Đọc ghi chú
+            function speakNote(text) {
+                if (speechSynthesis.speaking) {
+                    speechSynthesis.cancel();
+                }
+
+                const speak = () => {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'en-US';
+                    utterance.rate = 0.7;
+                    speechSynthesis.speak(utterance);
+                };
+
+                // Lần đọc đầu tiên
+                speak();
+
+                // Lần đọc thứ hai sau 2 giây
+                setTimeout(() => {
+                    speak();
+                }, 2000);
+            }
+            
+            // Xuất ghi chú
+            function exportNotes() {
+                const noteBoxes = notesDisplay.querySelectorAll('.note-box');
+                if (noteBoxes.length === 0) {
+                    alert('Không có ghi chú nào để xuất.');
+                    return;
+                }
+                
+                const notes = Array.from(noteBoxes).map(box => ({
+                    text: box.dataset.text,
+                    fontSize: box.dataset.fontSize
+                }));
+                
+                const noteData = { notes };
+                
+                const dataStr = JSON.stringify(noteData);
+                const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+                
+                const exportLink = document.createElement('a');
+                exportLink.setAttribute('href', dataUri);
+                exportLink.setAttribute('download', 'ghi-chu-' + new Date().toISOString().slice(0, 10) + '.json');
+                exportLink.click();
+            }
+            
+            // Nhập ghi chú
+            function importNotes(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        
+                        notesDisplay.innerHTML = '';
+                        
+                        if (data.notes && Array.isArray(data.notes)) {
+                            if (data.notes.length === 0) {
+                                showEmptyState();
+                            } else {
+                                data.notes.forEach(note => {
+                                    const fontSize = note.fontSize || fontSizeInput.value;
+                                    addNoteBox(note.text, fontSize);
+                                });
+                            }
+                        } else {
+                            showEmptyState();
+                        }
+                    } catch (error) {
+                        alert('Không thể đọc file! Vui lòng chọn file ghi chú hợp lệ.');
+                        console.error('Lỗi khi nhập file:', error);
+                        showEmptyState();
+                    }
+                };
+                reader.readAsText(file);
+            }
+            
+            // Cập nhật cỡ chữ theo thời gian thực
+            fontSizeInput.addEventListener('input', function() {
+                const fontSize = this.value;
+                document.querySelectorAll('.note-box').forEach(box => {
+                    box.querySelector('.note-text').style.fontSize = fontSize + 'px';
+                    box.dataset.fontSize = fontSize;
+                });
+            });
+            
+            // Sự kiện
+            postButton.addEventListener('click', postNote);
+            textInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    postNote();
+                }
+            });
+            
+            exportBtn.addEventListener('click', exportNotes);
+            importBtn.addEventListener('click', function() {
+                fileInput.click();
+            });
+            fileInput.addEventListener('change', importNotes);
+        });
+    </script>
+</body>
+</html>
