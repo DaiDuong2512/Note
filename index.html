@@ -1,4 +1,43 @@
-<!DOCTYPE html>
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
@@ -20,7 +59,8 @@
             --note-box-height: 80px;
             --phrase-color: #1e88e5; /* Blue for phrase and individual words */
             --word-color: #00695c; /* Dark teal for "Cụm" and "Từ" */
-            --phonetic-color: #414440; /* Purple for phonetics */
+            --phonetic-color: #414440; /* Near black for phonetics */
+            --translation-color: #8a8a8a; /* Gray for translations */
         }
         
         * {
@@ -148,6 +188,10 @@
             display: none;
         }
         
+        .trans {
+            margin-left: 3rem;
+        }
+
         .notes-area {
             flex: 1;
             background-color: var(--card-color);
@@ -206,20 +250,23 @@
             color: var(--phrase-color);
         }
         
-        .pre-phonetic {
-            opacity: 0.7;
-        }
-
         .word-phonetic {
             color: var(--word-color);
         }
         
         .phonetic {
             color: var(--phonetic-color);
+            margin-left: 0.8em
+        }
+        
+        .translation {
+            color: var(--translation-color);
+            margin-left: 2.2em
         }
         
         .separator {
             color: #000000; /* Black for separators */
+            margin-left: 0.6em
         }
         
         .note-controls {
@@ -407,10 +454,31 @@
                 'interjection': 'int'
             };
 
-            // Fetch word or phrase data (phonetic and POS) from APIs
+            // Fetch translation from MyMemory API
+            async function fetchTranslation(text) {
+                try {
+                    const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=${encodeURIComponent(text)}`);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        // Lấy phần dịch
+                        const translated = data[0].map(item => item[0]).join('');
+                        return translated;
+                    } else {
+                        console.warn(`Google Translate API failed for "${text}": ${response.status}`);
+                        return '';
+                    }
+                } catch (error) {
+                    console.warn(`Google Translate API error for "${text}":`, error);
+                    return '';
+                }
+            }
+
+            // Fetch word or phrase data (phonetic, POS, and translation) from APIs
             async function fetchWordData(text) {
                 let phonetic = '';
                 let pos = '';
+                let translation = '';
 
                 // Free Dictionary API for phonetics (supports phrases)
                 try {
@@ -428,7 +496,7 @@
                 }
 
                 // Merriam-Webster API for POS (only for single words)
-                if (!text.includes(' ')) { // Skip for phrases
+                if (!text.includes(' ')) {
                     try {
                         const response = await fetch(`https://www.dictionaryapi.com/api/v3/references/collegiate/json/${text}?key=${MW_API_KEY}`);
                         if (response.ok) {
@@ -449,20 +517,24 @@
                     }
                 }
 
-                return { phonetic, pos };
+                // MyMemory API for translation (only for the input text)
+                translation = await fetchTranslation(text);
+
+                return { phonetic, pos, translation };
             }
 
             // Fetch data for entire phrase and individual words
             async function fetchNoteData(text) {
                 const wordData = { phrase: {}, words: {} };
 
-                // Fetch data for the entire phrase
+                // Fetch data for the entire phrase (including translation)
                 wordData.phrase = await fetchWordData(text);
 
-                // Fetch data for individual words
+                // Fetch data for individual words (phonetic and POS only, no translation)
                 const words = text.split(/\s+/).filter(word => word.match(/^[a-zA-Z]+$/));
                 for (const word of words) {
-                    wordData.words[word.toLowerCase()] = await fetchWordData(word.toLowerCase());
+                    const wordInfo = await fetchWordData(word.toLowerCase());
+                    wordData.words[word.toLowerCase()] = { phonetic: wordInfo.phonetic, pos: wordInfo.pos };
                 }
 
                 return wordData;
@@ -547,37 +619,35 @@
 
                 // If text contains a space, show both phrase and individual word phonetics
                 if (text.includes(' ')) {
-                    // Display phrase phonetic in blue (if available)
-                    if (wordData.phrase?.phonetic) {
-                        metaText += `<span class="phrase-phonetic">${text} ${wordData.phrase.pos}</span> <span class="phonetic">//${wordData.phrase.phonetic}//</span> <span class="separator">||</span> `;
+                    // Display phrase phonetic and translation
+                    if (wordData.phrase?.phonetic || wordData.phrase?.translation) {
+                        const phonetic = wordData.phrase.phonetic ? `<span class="phonetic">//${wordData.phrase.phonetic}//</span>` : '';
+                        const translation = wordData.phrase.translation ? `<span class="translation">${wordData.phrase.translation}</span>` : '';
+                        metaText += `<span class="word-phonetic">${text}</span> ${phonetic} ${translation}<span class="separator">||
+                    </span> `;
                     }
-                    // Display individual word phonetics and POS in teal
+                    // Display individual word phonetics and POS
                     const words = text.split(/\s+/).filter(word => word.match(/^[a-zA-Z]+$/));
                     words.forEach((word, index) => {
                         const data = wordData.words[word.toLowerCase()];
                         if (data && (data.phonetic || data.pos)) {
                             const pos = data.pos ? `(${data.pos})` : '';
                             const phonetic = data.phonetic ? `<span class="phonetic">//${data.phonetic}//</span>` : '';
-                            metaText += `
-                                        <span class="pre-phonetic">
-                                            <span class="word-phonetic">${word}</span>
-                                            <span class="pos">${pos}</span>
-                                            <span class="phonetic">${phonetic}</span>
-                                        </span>
-                                        `;
+                            metaText += `<span class="separator"> </span>${pos} ${phonetic}`;
                             if (index < words.length - 1) {
                                 metaText += ` <span class="separator">|</span> `;
                             }
                         }
                     });
                 } else {
-                    // Single word: show phonetic and POS in teal
+                    // Single word: show phonetic, POS, and translation
                     const word = text;
                     const data = wordData.words[word.toLowerCase()];
-                    if (data && (data.phonetic || data.pos)) {
+                    if (data && (data.phonetic || data.pos || wordData.phrase.translation)) {
                         const pos = data.pos ? `(${data.pos})` : '';
                         const phonetic = data.phonetic ? `<span class="phonetic">//${data.phonetic}//</span>` : '';
-                        metaText += `<span class="word-phonetic"${word}: </span> ${pos} ${phonetic}`;
+                        const translation = wordData.phrase.translation ? `<span class="translation">Dịch: ${wordData.phrase.translation}</span>` : '';
+                        metaText += `<span class="separator"> </span>${pos} ${phonetic} ${translation}`;
                     }
                 }
 
@@ -616,7 +686,7 @@
                 utterance.rate = 0.7;
                 speechSynthesis.speak(utterance);
 
-                // Repeat after 2 seconds for clarity
+                // Repeat after 1.2 seconds for clarity
                 setTimeout(() => {
                     const repeatUtterance = new SpeechSynthesisUtterance(text);
                     repeatUtterance.lang = 'en-US';
