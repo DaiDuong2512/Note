@@ -608,7 +608,7 @@
                         if (data && (data.phonetic || data.pos)) {
                             const pos = data.pos ? `(${data.pos})` : '';
                             const phonetic = data.phonetic ? `<span class="phonetic">//${data.phonetic}//</span>` : '';
-                            metaText += `<span class="separator"> </span>${pos} ${phonetic}`;
+                            metaText += `<span class="separator"><span class="word-phonetic">${text}</span> </span>${pos} ${phonetic}`;
                             if (index < words.length - 1) {
                                 metaText += ` <span class="separator">|</span> `;
                             }
@@ -621,7 +621,7 @@
                         const pos = data.pos ? `(${data.pos})` : '';
                         const phonetic = data.phonetic ? `<span class="phonetic">//${data.phonetic}//</span>` : '';
                         const translation = wordData.phrase.translation ? `<span class="translation">Dịch: ${wordData.phrase.translation}</span>` : '';
-                        metaText += `<span class="separator"> </span>${pos} ${phonetic} ${translation}`;
+                        metaText += `<span class="separator"><span class="word-phonetic">${text}</span> </span>${pos} ${phonetic} ${translation}`;
                     }
                 }
 
