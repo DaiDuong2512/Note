@@ -1,48 +1,10 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ứng dụng Ghi chú</title>
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/6328/6328115.png">
     <style>
         :root {
             --primary-color: #4285f4;
@@ -57,10 +19,10 @@
             --note-box-margin: 10px;
             --note-box-padding: 15px;
             --note-box-height: 80px;
-            --phrase-color: #1e88e5; /* Blue for phrase and individual words */
-            --word-color: #00695c; /* Dark teal for "Cụm" and "Từ" */
-            --phonetic-color: #414440; /* Near black for phonetics */
-            --translation-color: #8a8a8a; /* Gray for translations */
+            --phrase-color: #1e88e5;
+            --word-color: #00695c;
+            --phonetic-color: #414440;
+            --translation-color: #8a8a8a;
         }
         
         * {
@@ -131,10 +93,44 @@
             font-size: 16px;
             font-weight: 700;
             transition: background-color 0.3s;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
-        #postButton:hover {
+        #postButton:hover:not(.loading) {
             background-color: #3367d6;
+        }
+        
+        #postButton.loading {
+            cursor: not-allowed;
+            background-color: #7ba7f7;
+            pointer-events: none;
+        }
+        
+        #postButton .loading-spinner {
+            display: none;
+            border: 3px solid #ffffff;
+            border-top: 3px solid transparent;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+        
+        #postButton.loading .loading-spinner {
+            display: inline-block;
+        }
+        
+        #postButton.loading span {
+            display: none;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         
         .controls {
@@ -176,7 +172,7 @@
             border: none;
             border-radius: var(--border-radius);
             cursor: pointer;
-            font-weight: bold;
+            intensification: bold;
             transition: background-color 0.3s;
         }
         
@@ -265,7 +261,7 @@
         }
         
         .separator {
-            color: #000000; /* Black for separators */
+            color: #000000;
             margin-left: 0.6em
         }
         
@@ -370,7 +366,10 @@
         <div class="input-controls">
             <div class="input-area">
                 <input type="text" spellcheck="false" id="textInput" placeholder="Nhập ghi chú của bạn..." aria-label="Nhập ghi chú mới">
-                <button id="postButton" aria-label="Đăng ghi chú">Đăng</button>
+                <button id="postButton" aria-label="Đăng ghi chú">
+                    <span class="loading-spinner"></span>
+                    <span>Đăng</span>
+                </button>
             </div>
             
             <div class="controls">
@@ -394,7 +393,6 @@
     </div>
 
     <script>
-        // File handling for XLSX (unchanged)
         var gk_isXlsx = false;
         var gk_xlsxFileLookup = {};
         var gk_fileData = {};
@@ -431,7 +429,6 @@
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // DOM elements
             const textInput = document.getElementById('textInput');
             const postButton = document.getElementById('postButton');
             const notesDisplay = document.getElementById('notesDisplay');
@@ -440,8 +437,7 @@
             const importBtn = document.getElementById('importBtn');
             const fileInput = document.getElementById('fileInput');
 
-            // Constants
-            const MW_API_KEY = '41df0ea1-5bee-4925-93ed-7070a944a385'; // Placeholder Merriam-Webster API key
+            const MW_API_KEY = '41df0ea1-5bee-4925-93ed-7070a944a385';
             const commonVerbs = new Set(['go', 'run', 'eat', 'drink', 'sleep', 'write', 'read', 'speak', 'listen', 'walk']);
             const posAbbreviations = {
                 'verb': 'v',
@@ -454,14 +450,12 @@
                 'interjection': 'int'
             };
 
-            // Fetch translation from MyMemory API
             async function fetchTranslation(text) {
                 try {
                     const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=${encodeURIComponent(text)}`);
                     
                     if (response.ok) {
                         const data = await response.json();
-                        // Lấy phần dịch
                         const translated = data[0].map(item => item[0]).join('');
                         return translated;
                     } else {
@@ -474,13 +468,11 @@
                 }
             }
 
-            // Fetch word or phrase data (phonetic, POS, and translation) from APIs
             async function fetchWordData(text) {
                 let phonetic = '';
                 let pos = '';
                 let translation = '';
 
-                // Free Dictionary API for phonetics (supports phrases)
                 try {
                     const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(text)}`);
                     if (response.ok) {
@@ -495,7 +487,6 @@
                     console.warn(`Free Dictionary API error for "${text}":`, error);
                 }
 
-                // Merriam-Webster API for POS (only for single words)
                 if (!text.includes(' ')) {
                     try {
                         const response = await fetch(`https://www.dictionaryapi.com/api/v3/references/collegiate/json/${text}?key=${MW_API_KEY}`);
@@ -517,20 +508,16 @@
                     }
                 }
 
-                // MyMemory API for translation (only for the input text)
                 translation = await fetchTranslation(text);
 
                 return { phonetic, pos, translation };
             }
 
-            // Fetch data for entire phrase and individual words
             async function fetchNoteData(text) {
                 const wordData = { phrase: {}, words: {} };
 
-                // Fetch data for the entire phrase (including translation)
                 wordData.phrase = await fetchWordData(text);
 
-                // Fetch data for individual words (phonetic and POS only, no translation)
                 const words = text.split(/\s+/).filter(word => word.match(/^[a-zA-Z]+$/));
                 for (const word of words) {
                     const wordInfo = await fetchWordData(word.toLowerCase());
@@ -540,7 +527,6 @@
                 return wordData;
             }
 
-            // Create and add a new note box
             function addNoteBox(text, fontSize, wordData = {}) {
                 const noteBox = document.createElement('div');
                 noteBox.className = 'note-box';
@@ -548,7 +534,6 @@
                 noteBox.dataset.fontSize = fontSize;
                 noteBox.dataset.wordData = JSON.stringify(wordData);
 
-                // Note text (editable)
                 const noteText = document.createElement('span');
                 noteText.className = 'note-text';
                 noteText.spellcheck = false;
@@ -557,7 +542,6 @@
                 noteText.style.fontSize = `${fontSize}px`;
                 noteText.setAttribute('aria-label', 'Nội dung ghi chú có thể chỉnh sửa');
 
-                // Update note data on input
                 noteText.addEventListener('input', async () => {
                     const newText = noteText.textContent.trim();
                     noteBox.dataset.text = newText;
@@ -566,15 +550,12 @@
                     updateNoteMeta(noteBox, newWordData);
                 });
 
-                // Note metadata
                 const noteMeta = document.createElement('div');
                 noteMeta.className = 'note-meta';
 
-                // Note controls
                 const noteControls = document.createElement('div');
                 noteControls.className = 'note-controls';
 
-                // Remove button
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'btn remove-btn';
                 removeBtn.innerHTML = 'X';
@@ -585,7 +566,6 @@
                     if (!notesDisplay.children.length) showEmptyState();
                 });
 
-                // Speak button
                 const speakBtn = document.createElement('button');
                 speakBtn.className = 'btn speak-btn';
                 speakBtn.innerHTML = '🔊';
@@ -601,12 +581,10 @@
 
                 updateNoteMeta(noteBox, wordData);
 
-                // Add note at the top and focus
                 notesDisplay.insertBefore(noteBox, notesDisplay.firstChild);
                 noteText.focus();
             }
 
-            // Update note metadata (phrase and single words)
             function updateNoteMeta(noteBox, wordData) {
                 const noteMeta = noteBox.querySelector('.note-meta');
                 if (!noteMeta) {
@@ -617,16 +595,13 @@
                 let metaText = '';
                 const text = noteBox.dataset.text.trim();
 
-                // If text contains a space, show both phrase and individual word phonetics
                 if (text.includes(' ')) {
-                    // Display phrase phonetic and translation
                     if (wordData.phrase?.phonetic || wordData.phrase?.translation) {
                         const phonetic = wordData.phrase.phonetic ? `<span class="phonetic">//${wordData.phrase.phonetic}//</span>` : '';
                         const translation = wordData.phrase.translation ? `<span class="translation">${wordData.phrase.translation}</span>` : '';
                         metaText += `<span class="word-phonetic">${text}</span> ${phonetic} ${translation}<span class="separator">||
                     </span> `;
                     }
-                    // Display individual word phonetics and POS
                     const words = text.split(/\s+/).filter(word => word.match(/^[a-zA-Z]+$/));
                     words.forEach((word, index) => {
                         const data = wordData.words[word.toLowerCase()];
@@ -640,7 +615,6 @@
                         }
                     });
                 } else {
-                    // Single word: show phonetic, POS, and translation
                     const word = text;
                     const data = wordData.words[word.toLowerCase()];
                     if (data && (data.phonetic || data.pos || wordData.phrase.translation)) {
@@ -654,22 +628,28 @@
                 noteMeta.innerHTML = metaText.trim();
             }
 
-            // Post a new note
             async function postNote() {
                 const text = textInput.value.trim();
                 if (!text) return;
 
-                const emptyState = notesDisplay.querySelector('.empty-state');
-                if (emptyState) notesDisplay.removeChild(emptyState);
+                postButton.classList.add('loading');
 
-                const wordData = await fetchNoteData(text);
-                addNoteBox(text, fontSizeInput.value, wordData);
+                try {
+                    const emptyState = notesDisplay.querySelector('.empty-state');
+                    if (emptyState) notesDisplay.removeChild(emptyState);
 
-                textInput.value = '';
-                textInput.focus();
+                    const wordData = await fetchNoteData(text);
+                    addNoteBox(text, fontSizeInput.value, wordData);
+
+                    textInput.value = '';
+                    textInput.focus();
+                } catch (error) {
+                    console.error('Error posting note:', error);
+                } finally {
+                    postButton.classList.remove('loading');
+                }
             }
 
-            // Show empty state message
             function showEmptyState() {
                 const emptyState = document.createElement('div');
                 emptyState.className = 'empty-state';
@@ -677,7 +657,6 @@
                 notesDisplay.appendChild(emptyState);
             }
 
-            // Speak note text
             function speakNote(text) {
                 if (speechSynthesis.speaking) speechSynthesis.cancel();
 
@@ -686,7 +665,6 @@
                 utterance.rate = 0.7;
                 speechSynthesis.speak(utterance);
 
-                // Repeat after 1.2 seconds for clarity
                 setTimeout(() => {
                     const repeatUtterance = new SpeechSynthesisUtterance(text);
                     repeatUtterance.lang = 'en-US';
@@ -695,7 +673,6 @@
                 }, 1200);
             }
 
-            // Export notes to JSON
             function exportNotes() {
                 const noteBoxes = notesDisplay.querySelectorAll('.note-box');
                 if (!noteBoxes.length) {
@@ -718,7 +695,6 @@
                 exportLink.click();
             }
 
-            // Import notes from JSON
             async function importNotes(e) {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -757,7 +733,6 @@
                 }
             }
 
-            // Update font size for all notes
             function updateFontSize() {
                 const fontSize = fontSizeInput.value;
                 document.querySelectorAll('.note-box').forEach(box => {
@@ -766,7 +741,6 @@
                 });
             }
 
-            // Event listeners
             postButton.addEventListener('click', postNote);
             textInput.addEventListener('keypress', e => {
                 if (e.key === 'Enter') postNote();
