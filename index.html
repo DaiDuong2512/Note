@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ứng dụng Ghi chú</title>
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/6328/6328115.png">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
             --primary-color: #4285f4;
@@ -86,6 +88,7 @@
             border-radius: var(--border-radius) 0 0 var(--border-radius);
             font-size: 16px;
             outline: none;
+            font-family: 'Roboto', Arial, sans-serif;
             transition: border-color 0.3s;
             resize: vertical;
             min-height: 100px;
@@ -230,6 +233,9 @@
             padding: var(--note-box-padding);
             margin: 0;
             min-height: var(--note-box-height);
+            margin-bottom: var(--note-box-margin);
+            font-family: 'Roboto', Arial, sans-serif;
+            font-weight: 800;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
@@ -244,8 +250,9 @@
             font-weight: 500;
             flex-grow: 1;
             outline: none;
-            cursor: text;
+            cursor: pointer;
             white-space: pre-wrap;
+            margin-bottom: 8px; /* Add spacing below note-text */
         }
         
         .note-text[contenteditable]:focus {
@@ -256,9 +263,10 @@
         
         .note-meta {
             font-size: 1em;
-            font-weight: 600;
+            font-weight: 800;
             color: #267a73;
             margin-top: 3px;
+            margin-bottom: 8px; /* Add spacing below note-meta */
         }
         
         .phrase-phonetic {
@@ -285,12 +293,9 @@
         }
         
         .note-controls {
-            position: absolute;
-            right: var(--note-box-padding);
-            top: 50%;
-            transform: translateY(-50%);
             display: flex;
             gap: 8px;
+            justify-content: flex-end; /* Align buttons to the right */
         }
         
         .btn {
@@ -337,7 +342,8 @@
             display: flex;
             align-items: center;
             gap: 4px;
-            padding: 4px 8px;
+            padding: 4px;
+            padding: 8px;
             background-color: var(--primary-color);
             color: white;
             border: none;
@@ -392,7 +398,7 @@
             }
         }
         
-        @media (max-width: 600px) {
+        @media (max-width: 800px) {
             .container {
                 padding: 8px;
             }
@@ -424,9 +430,8 @@
             }
             
             .note-controls {
-                flex-direction: column;
-                right: 8px;
-                gap: 5px;
+                flex-direction: row;
+                justify-content: flex-end;
             }
             
             .btn {
@@ -617,7 +622,6 @@
             }
 
             async function fetchNoteData(text) {
-                // Skip fetching data for notes with more than one period or more than 5 words
                 const periodCount = (text.match(/\./g) || []).length;
                 const wordCount = text.split(/\s+/).filter(word => word.match(/^[a-zA-Z]+$/)).length;
                 if (periodCount > 1 || wordCount > 5) {
@@ -649,16 +653,29 @@
                 noteText.className = 'note-text';
                 noteText.spellcheck = false;
                 noteText.textContent = text;
-                noteText.contentEditable = true;
+                noteText.contentEditable = false;
                 noteText.style.fontSize = `${fontSize}px`;
-                noteText.setAttribute('aria-label', 'Nội dung ghi chú có thể chỉnh sửa');
+                noteText.setAttribute('aria-label', 'Nội dung ghi chú, nhấp đúp để chỉnh sửa');
 
-                noteText.addEventListener('input', async () => {
+                noteText.addEventListener('dblclick', () => {
+                    noteText.contentEditable = true;
+                    noteText.focus();
+                });
+
+                noteText.addEventListener('blur', async () => {
+                    noteText.contentEditable = false;
                     const newText = noteText.textContent.trim();
                     noteBox.dataset.text = newText;
                     const newWordData = newText ? await fetchNoteData(newText) : { phrase: {}, words: {} };
                     noteBox.dataset.wordData = JSON.stringify(newWordData);
                     updateNoteMeta(noteBox, newWordData);
+                });
+
+                noteText.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        noteText.blur();
+                    }
                 });
 
                 const noteMeta = document.createElement('div');
@@ -691,16 +708,14 @@
                     }
                 });
 
-                noteControls.appendChild(removeBtn);
                 noteControls.appendChild(speakBtn);
+                noteControls.appendChild(removeBtn);
                 noteBox.appendChild(noteText);
                 noteBox.appendChild(noteMeta);
                 noteBox.appendChild(noteControls);
 
                 notesDisplay.insertBefore(noteBox, notesDisplay.firstChild);
-                noteText.focus();
 
-                // Lazy load word data only if applicable
                 const periodCount = (text.match(/\./g) || []).length;
                 const wordCount = text.split(/\s+/).filter(word => word.match(/^[a-zA-Z]+$/)).length;
                 if (periodCount <= 1 && wordCount <= 5) {
@@ -712,7 +727,7 @@
                         noteMeta.textContent = 'Không thể tải thông tin từ vựng';
                     });
                 } else {
-                    noteMeta.textContent = ''; // No meta data for long notes
+                    noteMeta.textContent = '';
                 }
 
                 return noteBox;
@@ -728,7 +743,6 @@
                 let metaText = '';
                 const text = noteBox.dataset.text.trim();
 
-                // Skip meta data for notes with more than one period or more than 5 words
                 const periodCount = (text.match(/\./g) || []).length;
                 const wordCount = text.split(/\s+/).filter(word => word.match(/^[a-zA-Z]+$/)).length;
                 if (periodCount > 1 || wordCount > 5) {
@@ -772,7 +786,6 @@
                 let text = textInput.value.trim();
                 if (!text) return;
 
-                // Add extra line break for single line breaks, preserve double line breaks
                 text = text.replace(/(?<!\n)\n(?!\n)/g, '\n\n');
 
                 postButton.classList.add('loading');
@@ -802,10 +815,9 @@
             function speakNote(text, noteBox, speakBtn) {
                 if (speechSynthesis.speaking) speechSynthesis.cancel();
 
-                // Split text into segments by periods and commas
                 const segments = text.split(/([.,])/).filter(segment => segment.trim());
-                const isLongContent = segments.length > 5 || text.length > 100; // Consider text with >5 segments or >100 chars as long content
-                const rate = isLongContent ? 0.7 : 0.65;
+                const isLongContent = segments.length > 5 || text.length > 100;
+                const rate = isLongContent ? 0.7 : 0.6;
 
                 noteBox.dataset.isSpeaking = 'true';
                 speakBtn.innerHTML = '⏸';
@@ -818,25 +830,23 @@
                         utterance.lang = 'en-US';
                         utterance.rate = rate;
 
-                        // Add pause after periods and commas
                         if (index < segments.length - 1) {
                             const nextSegment = segments[index + 1];
                             if (nextSegment === '.') {
                                 utterance.onend = () => {
                                     if (noteBox.dataset.isSpeaking === 'true') {
-                                        setTimeout(() => {}, 80); // Longer pause for period
+                                        setTimeout(() => {}, 80);
                                     }
                                 };
                             } else if (nextSegment === ',') {
                                 utterance.onend = () => {
                                     if (noteBox.dataset.isSpeaking === 'true') {
-                                        setTimeout(() => {}, 10); // Shorter pause for comma
+                                        setTimeout(() => {}, 10);
                                     }
                                 };
                             }
                         }
 
-                        // Reset icon when speech ends
                         utterance.onend = () => {
                             if (index === segments.length - 1 || noteBox.dataset.isSpeaking === 'false') {
                                 noteBox.dataset.isSpeaking = 'false';
@@ -960,10 +970,10 @@
 
             postButton.addEventListener('click', postNote);
             textInput.addEventListener('keypress', e => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    postNote();
-                }
+                //if (e.key === 'Enter' && !e.shiftKey) {
+                    //e.preventDefault();
+                    //postNote();
+                //}
             });
             fontSizeInput.addEventListener('input', updateFontSize);
             exportBtn.addEventListener('click', exportNotes);
