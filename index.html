@@ -21,7 +21,7 @@
             --note-box-margin: 10px;
             --note-box-padding: 15px;
             --note-box-height: 80px;
-            --phrase-color: #1e88e5;
+            --phrase-color: #054068;
             --word-color: #00695c;
             --phonetic-color: #414440;
             --translation-color: #8a8a8a;
@@ -301,12 +301,13 @@
 
         .translation {
             color: var(--translation-color);
-            margin-left: 2.2em;
+            font-size: 0.8em;
+            margin-left: 1.2em;
         }
 
         .separator {
             color: #000000;
-            margin-left: 0.6em;
+            margin-left: 0.1em;
         }
 
         .note-controls {
@@ -816,12 +817,12 @@
                 const { phrase, words } = wordData;
 
                 if (phrase && (phrase.phonetic || phrase.pos || phrase.translation)) {
-                    let phraseHtml = `<span class="phrase-phonetic">`;
-                    if (phrase.pos) phraseHtml += `(${phrase.pos}) `;
+                    let phraseHtml = `<span class="phonetic">`;
+                    if (phrase.pos) phraseHtml += `<span class="phrase-phonetic">(${phrase.pos}) </span>`;
                     if (phrase.phonetic) phraseHtml += `/${phrase.phonetic}/`;
                     phraseHtml += `</span>`;
                     if (phrase.translation) {
-                        phraseHtml += `<span class="separator">–</span><span class="translation">${phrase.translation}</span>`;
+                        phraseHtml += `<span class="separator">|</span><span class="translation">${phrase.translation}</span>`;
                     }
                     noteMeta.innerHTML += `<div>${phraseHtml}</div>`;
                 }
@@ -832,7 +833,7 @@
                     wordsArray.forEach(([word, data]) => {
                         if (data.phonetic || data.pos) {
                             let wordHtml = `<div><span class="word-phonetic">${word}`;
-                            if (data.pos) wordHtml += ` (${data.pos})`;
+                            if (data.pos) wordHtml += `<span class="phrase-phonetic"> (${data.pos})</span>`;
                             if (data.phonetic) wordHtml += `<span class="phonetic">/${data.phonetic}/</span>`;
                             wordHtml += `</span></div>`;
                             noteMeta.innerHTML += wordHtml;
