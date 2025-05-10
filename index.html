@@ -26,13 +26,13 @@
             --phonetic-color: #414440;
             --translation-color: #8a8a8a;
         }
-        
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
-        
+
         body {
             font-family: 'Roboto', Arial, sans-serif;
             background-color: var(--background-color);
@@ -41,7 +41,7 @@
             margin: 0;
             padding: 0;
         }
-        
+
         .container {
             display: flex;
             flex-direction: column;
@@ -50,14 +50,14 @@
             padding: 16px;
             overflow: hidden;
         }
-        
+
         .title {
             text-align: center;
             color: var(--primary-color);
             margin: 10px 0;
             font-size: 24px;
         }
-        
+
         .input-controls {
             background-color: var(--card-color);
             border-radius: var(--border-radius);
@@ -65,27 +65,30 @@
             padding: 16px;
             margin-bottom: 16px;
             transition: height 0.3s ease;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
         }
-        
+
         .input-controls.hidden {
             height: 0;
             padding: 0;
             margin: 0;
             overflow: hidden;
         }
-        
+
         .input-area {
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-        
-        #textInput {
             flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        #textInput {
+            width: 100%;
             padding: 12px 16px;
             border: 2px solid var(--primary-color);
-            border-radius: var(--border-radius) 0 0 var(--border-radius);
+            border-radius: var(--border-radius);
             font-size: 16px;
             outline: none;
             font-family: 'Roboto', Arial, sans-serif;
@@ -93,80 +96,87 @@
             resize: vertical;
             min-height: 100px;
         }
-        
+
         #textInput:focus {
             border-color: var(--secondary-color);
         }
-        
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 12rem;
+        }
+
         #postButton {
-            padding: 12px 24px;
+            padding: 8px 16px;
             background-color: var(--primary-color);
             color: white;
             border: none;
-            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+            border-radius: var(--border-radius);
             cursor: pointer;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 700;
             transition: background-color 0.3s;
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 88px;
+            min-width: 5rem;
         }
-        
+
         #postButton:hover:not(.loading) {
             background-color: #3367d6;
         }
-        
+
         #postButton.loading {
             cursor: not-allowed;
             background-color: #7ba7f7;
             pointer-events: none;
         }
-        
+
         #postButton .loading-spinner {
             display: none;
             border: 3px solid #a1bef3;
             border-top: 3px solid transparent;
             border-radius: 50%;
-            width: 16px;
-            height: 16px;
+            width: 12px;
+            height: 12px;
             animation: spin 1s linear infinite;
-            margin-right: 8px;
+            margin-right: 6px;
         }
-        
+
         #postButton.loading .loading-spinner {
             display: inline-block;
         }
-        
+
         #postButton.loading span {
             display: none;
         }
-        
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
-        .controls {
+
+        .controls-top {
             display: flex;
-            flex-direction: column;
+            align-items: center;
             gap: 8px;
         }
-        
-        .font-controls {
+
+        .font-control {
             display: flex;
             align-items: center;
             gap: 4px;
         }
-        
+
         .font-size-label {
             font-weight: bold;
             color: var(--text-color);
             font-size: 14px;
         }
-        
-        #fontSize {
+
+        .font-size-input {
             width: 50px;
             padding: 4px;
             border: 1px solid #ddd;
@@ -174,12 +184,12 @@
             text-align: center;
             font-size: 14px;
         }
-        
+
         .file-controls {
             display: flex;
             gap: 8px;
         }
-        
+
         .file-button {
             padding: 8px;
             background-color: var(--secondary-color);
@@ -194,21 +204,21 @@
             align-items: center;
             justify-content: center;
         }
-        
+
         .file-button:hover {
             background-color: #2d9249;
         }
-        
+
         .file-button svg {
             width: 20px;
             height: 20px;
             fill: white;
         }
-        
+
         #fileInput {
             display: none;
         }
-        
+
         .notes-area {
             flex: 1;
             background-color: var(--card-color);
@@ -217,14 +227,14 @@
             padding: 16px;
             overflow-y: auto;
         }
-        
+
         #notesDisplay {
             display: flex;
             flex-direction: column;
             gap: var(--note-box-margin);
             width: 100%;
         }
-        
+
         .note-box {
             position: relative;
             background-color: #e8f0fe;
@@ -241,65 +251,70 @@
             flex-direction: column;
             transition: background-color 0.2s;
         }
-        
+
         .note-box:hover {
             background-color: #d2e3fc;
         }
-        
+
+        .note-top-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
         .note-text {
             font-weight: 600;
             flex-grow: 1;
             outline: none;
             cursor: pointer;
             white-space: pre-wrap;
-            margin-bottom: 8px; /* Add spacing below note-text */
+            margin-bottom: 8px;
         }
-        
+
         .note-text[contenteditable]:focus {
             background-color: #fff;
             border-radius: 4px;
             font-weight: 600;
             padding: 4px;
         }
-        
+
         .note-meta {
             font-size: 1em;
             font-weight: 800;
             color: #267a73;
             margin-top: 3px;
-            margin-bottom: 8px; /* Add spacing below note-meta */
+            margin-bottom: 8px;
         }
-        
+
         .phrase-phonetic {
             color: var(--phrase-color);
         }
-        
+
         .word-phonetic {
             color: var(--word-color);
         }
-        
+
         .phonetic {
             color: var(--phonetic-color);
             margin-left: 0.8em;
         }
-        
+
         .translation {
             color: var(--translation-color);
             margin-left: 2.2em;
         }
-        
+
         .separator {
             color: #000000;
             margin-left: 0.6em;
         }
-        
+
         .note-controls {
             display: flex;
             gap: 8px;
-            justify-content: flex-end; /* Align buttons to the right */
-            margin-bottom: 8px; /* Add spacing below note-controls */
+            justify-content: flex-end;
         }
-        
+
         .btn {
             width: 36px;
             height: 36px;
@@ -313,38 +328,37 @@
             border: none;
             transition: transform 0.2s, background-color 0.2s;
         }
-        
+
         .btn:hover {
             transform: scale(1.1);
         }
-        
+
         .remove-btn {
             background-color: var(--danger-color);
         }
-        
+
         .speak-btn {
             background-color: var(--accent-color);
         }
-        
+
         .empty-state {
             text-align: center;
             padding: 40px 0;
             color: #757575;
             font-style: italic;
         }
-        
+
         .toggle-controls {
             display: flex;
             gap: 8px;
             margin-bottom: 8px;
             justify-content: flex-end;
         }
-        
+
         .toggle-button {
             display: flex;
             align-items: center;
             gap: 4px;
-            padding: 4px;
             padding: 8px;
             background-color: var(--primary-color);
             color: white;
@@ -354,17 +368,17 @@
             font-size: 12px;
             transition: background-color 0.3s;
         }
-        
+
         .toggle-button:hover {
             background-color: #3367d6;
         }
-        
+
         .toggle-button svg {
             width: 16px;
             height: 16px;
             fill: white;
         }
-        
+
         .fullscreen-button {
             padding: 4px;
             background-color: var(--secondary-color);
@@ -379,67 +393,189 @@
             align-items: center;
             justify-content: center;
         }
-        
+
         .fullscreen-button:hover {
             background-color: #2d9249;
         }
-        
+
         .fullscreen-button svg {
             width: 16px;
             height: 16px;
             fill: white;
         }
-        
-        @media (max-width: 1024px) {
-            .input-area {
-                flex-wrap: wrap;
+
+        /* Media query for screens larger than 800px */
+        @media (min-width: 801px) {
+            .input-controls {
+                flex-direction: row;
+                align-items: flex-start;
+                padding: 16px;
+                gap: 12px;
             }
-            
+
+            .input-area {
+                flex-grow: 1;
+                width: auto;
+            }
+
+            #textInput {
+                width: 100%;
+                min-height: 100px;
+            }
+
             .controls {
-                flex-wrap: wrap;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                min-width: 180px;
+            }
+
+            .controls-top {
+                flex-direction: row;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .font-control {
+                order: 0;
+            }
+
+            .file-controls {
+                order: 0;
+                flex-direction: row;
+                gap: 8px;
+            }
+
+            #postButton {
+                padding: 8px 16px;
+                font-size: 14px;
+                min-width: 80px;
+                order: 0;
             }
         }
-        
+
+        /* Media query for screens smaller than or equal to 800px */
         @media (max-width: 800px) {
             .container {
                 padding: 8px;
             }
-            
+
             .title {
                 font-size: 20px;
             }
-            
+
+            .input-controls {
+                flex-direction: column;
+                padding: 12px;
+                gap: 8px;
+            }
+
+            .input-area {
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+                gap: 8px;
+            }
+
+            #textInput {
+                width: 100%;
+                border-radius: var(--border-radius);
+                min-height: 80px;
+            }
+
+            #postButton {
+                padding: 8px 2rem;
+                font-size: 12px;
+                border-radius: var(--border-radius);
+                margin-left: auto;
+                height: auto;
+                width: auto;
+                min-width: 60px;
+                order: 4;
+            }
+
+            .controls {
+                flex-direction: row;
+                align-items: center;
+                margin-left: auto;
+                gap: 6px;
+                flex-wrap: nowrap;
+                min-width: auto;
+            }
+
+            .controls-top {
+                flex-direction: row;
+                align-items: center;
+                gap: 6px;
+            }
+
+            .font-control {
+                order: 1;
+            }
+
+            .file-controls {
+                order: 2;
+                flex-direction: row;
+                gap: 6px;
+            }
+
+            .file-button {
+                width: 28px;
+                height: 28px;
+            }
+
+            .file-button svg {
+                width: 16px;
+                height: 16px;
+            }
+
+            .font-size-input {
+                width: 45px;
+                font-size: 12px;
+            }
+
             .notes-area {
                 min-height: 50vh;
             }
-            
-            .input-area {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            #textInput {
-                border-radius: var(--border-radius) var(--border-radius) 0 0;
-            }
-            
-            #postButton {
-                border-radius: 0;
-                height: auto;
-            }
-            
-            .controls {
-                align-items: center;
-            }
-            
+
             .note-controls {
                 flex-direction: row;
                 justify-content: flex-end;
             }
-            
+
             .btn {
                 width: 30px;
                 height: 30px;
                 font-size: 14px;
+            }
+        }
+
+        /* Media query for screens smaller than or equal to 480px */
+        @media (max-width: 480px) {
+            #postButton {
+                padding: 6px 12px;
+                margin-left: auto;
+                font-size: 11px;
+                min-width: 50px;
+            }
+
+            .font-size-input {
+                width: 40px;
+                font-size: 11px;
+            }
+
+            .file-button {
+                width: 26px;
+                height: 26px;
+            }
+
+            .file-button svg {
+                width: 14px;
+                height: 14px;
+            }
+
+            .input-controls {
+                padding: 8px;
             }
         }
     </style>
@@ -467,28 +603,28 @@
         <div class="input-controls" id="inputControls">
             <div class="input-area">
                 <textarea spellcheck="false" id="textInput" placeholder="Nhập ghi chú của bạn..." aria-label="Nhập ghi chú mới"></textarea>
+            </div>
+            <div class="controls">
                 <button id="postButton" aria-label="Đăng ghi chú">
                     <span class="loading-spinner"></span>
                     <span>Đăng</span>
                 </button>
-                <div class="controls">
-                    <div class="font-controls">
-                        <label for="fontSize" class="font-size-label">Cỡ:</label>
-                        <input type="number" id="fontSize" min="12" max="128" value="54" aria-label="Cỡ chữ của ghi chú">
-                    </div>
-                    <div class="file-controls">
-                        <button id="exportBtn" class="file-button" aria-label="Xuất ghi chú">
-                            <svg viewBox="0 0 24 24">
-                                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-                            </svg>
-                        </button>
-                        <button id="importBtn" class="file-button" aria-label="Nhập ghi chú">
-                            <svg viewBox="0 0 24 24">
-                                <path d="M19 13h-4v6H9v-6H5l7-7 7 7zM5 4v2h14V4H5z"/>
-                            </svg>
-                        </button>
-                        <input type="file" id="fileInput" accept=".json" aria-label="Chọn file ghi chú để nhập">
-                    </div>
+                <div class="font-control">
+                    <label for="initialFontSize" class="font-size-label">Cỡ:</label>
+                    <input type="number" id="initialFontSize" class="font-size-input" min="12" max="128" value="54" aria-label="Cỡ chữ mặc định">
+                </div>
+                <div class="file-controls">
+                    <button id="exportBtn" class="file-button" aria-label="Xuất ghi chú">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                        </svg>
+                    </button>
+                    <button id="importBtn" class="file-button" aria-label="Nhập ghi chú">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19 13h-4v6H9v-6H5l7-7 7 7zM5 4v2h14V4H5z"/>
+                        </svg>
+                    </button>
+                    <input type="file" id="fileInput" accept=".json" aria-label="Chọn file ghi chú để nhập">
                 </div>
             </div>
         </div>
@@ -540,7 +676,7 @@
             const textInput = document.getElementById('textInput');
             const postButton = document.getElementById('postButton');
             const notesDisplay = document.getElementById('notesDisplay');
-            const fontSizeInput = document.getElementById('fontSize');
+            const initialFontSizeInput = document.getElementById('initialFontSize');
             const exportBtn = document.getElementById('exportBtn');
             const importBtn = document.getElementById('importBtn');
             const fileInput = document.getElementById('fileInput');
@@ -549,8 +685,8 @@
             const fullscreenBtn = document.getElementById('fullscreenBtn');
             const exitFullscreenBtn = document.getElementById('exitFullscreenBtn');
 
-            const MW_API_KEY = '41df0ea1-5bee-4925-93ed-7070a944a385';
-            const commonVerbs = new Set(['go', 'run', 'eat', 'drink', 'sleep', 'write', 'read', 'speak', 'listen', 'walk']);
+            const MW_API_KEY = '41df0ea1-5bee-4925-93ed-7070a944a385'; // Thay thế bằng API key của bạn nếu cần
+            const commonVerbs = new Set(['go', 'run', 'eat', 'drink', 'sleep', 'write', 'read', 'speak', 'listen', 'walk', 'be', 'have', 'do', 'say', 'get', 'make', 'know', 'think', 'take', 'see', 'come', 'want', 'look', 'use', 'find', 'give', 'tell']);
             const posAbbreviations = {
                 'verb': 'v',
                 'noun': 'n',
@@ -562,7 +698,16 @@
                 'interjection': 'int'
             };
 
+            let currentSpeech = null;
+            let initialFontSize = parseInt(initialFontSizeInput.value, 10);
+
+            initialFontSizeInput.addEventListener('change', () => {
+                initialFontSize = parseInt(initialFontSizeInput.value, 10);
+                saveNotes(); // Lưu lại cỡ chữ mặc định mới
+            });
+
             async function fetchTranslation(text) {
+                if (!text || /^\s*$/.test(text)) return ''; // Bỏ qua nếu text rỗng hoặc chỉ có khoảng trắng
                 try {
                     const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=${encodeURIComponent(text)}`);
                     if (response.ok) {
@@ -583,13 +728,14 @@
                 let pos = '';
                 let translation = '';
 
+                // API 1: Free Dictionary API (cho phiên âm)
                 try {
                     const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(text)}`);
                     if (response.ok) {
                         const data = await response.json();
                         const entry = data[0];
                         phonetic = entry.phonetic || (entry.phonetics?.find(p => p.text)?.text) || '';
-                        phonetic = phonetic.replace(/^\/|\/$/g, '');
+                        phonetic = phonetic.replace(/^\/|\/$/g, ''); // Bỏ dấu / ở đầu và cuối
                     } else {
                         console.warn(`Free Dictionary API failed for "${text}": ${response.status}`);
                     }
@@ -597,18 +743,22 @@
                     console.warn(`Free Dictionary API error for "${text}":`, error);
                 }
 
-                if (!text.includes(' ')) {
+                // API 2: Merriam-Webster (cho loại từ - part of speech) - chỉ cho từ đơn
+                if (!text.includes(' ')) { // Chỉ gọi API này nếu là một từ đơn
                     try {
                         const response = await fetch(`https://www.dictionaryapi.com/api/v3/references/collegiate/json/${text}?key=${MW_API_KEY}`);
                         if (response.ok) {
                             const data = await response.json();
-                            if (data?.length > 0) {
+                            if (data && data.length > 0 && typeof data[0] === 'object') { // Kiểm tra data[0] là object
                                 let entry = data[0];
+                                // Ưu tiên tìm 'verb' nếu từ đó nằm trong commonVerbs
                                 if (commonVerbs.has(text.toLowerCase())) {
-                                    const verbEntry = data.find(item => item.fl === 'verb');
+                                    const verbEntry = data.find(item => typeof item === 'object' && item.fl === 'verb');
                                     if (verbEntry) entry = verbEntry;
                                 }
                                 pos = posAbbreviations[entry.fl] || entry.fl || '';
+                            } else if (data && data.length > 0 && typeof data[0] === 'string') {
+                                console.warn(`Merriam-Webster API for "${text}" returned suggestions: ${data.slice(0,3).join(', ')}`);
                             }
                         } else {
                             console.warn(`Merriam-Webster API failed for "${text}": ${response.status}`);
@@ -618,88 +768,143 @@
                     }
                 }
 
+                // API 3: Google Translate (cho bản dịch tiếng Việt)
                 translation = await fetchTranslation(text);
 
                 return { phonetic, pos, translation };
             }
 
+
             async function fetchNoteData(text) {
-                const periodCount = (text.match(/\./g) || []).length;
-                const wordCount = text.split(/\s+/).filter(word => word.match(/^[a-zA-Z]+$/)).length;
-                if (periodCount > 1 || wordCount > 5) {
-                    return { phrase: {}, words: {} };
+                const trimmedText = text.trim();
+                if (!trimmedText) return { phrase: {}, words: {} }; // Trả về rỗng nếu không có text
+
+                const periodCount = (trimmedText.match(/\./g) || []).length;
+                const wordCount = trimmedText.split(/\s+/).filter(word => word.match(/^[a-zA-Z'-]+$/)).length; // Cho phép dấu nháy đơn và gạch nối trong từ
+
+                // Chỉ lấy dữ liệu chi tiết nếu là cụm từ ngắn hoặc một câu đơn giản
+                if (periodCount > 1 || wordCount > 7) { // Tăng giới hạn từ lên một chút
+                    const phraseTranslation = await fetchTranslation(trimmedText);
+                    return { phrase: { translation: phraseTranslation }, words: {} };
                 }
 
                 const wordData = { phrase: {}, words: {} };
 
-                wordData.phrase = await fetchWordData(text);
+                // Lấy dữ liệu cho cả cụm từ
+                wordData.phrase = await fetchWordData(trimmedText);
 
-                const words = text.split(/\s+/).filter(word => word.match(/^[a-zA-Z]+$/));
-                for (const word of words) {
-                    const wordInfo = await fetchWordData(word.toLowerCase());
-                    wordData.words[word.toLowerCase()] = { phonetic: wordInfo.phonetic, pos: wordInfo.pos };
+                // Lấy dữ liệu cho từng từ (nếu là cụm từ)
+                if (wordCount > 1) {
+                    const words = trimmedText.split(/\s+/).filter(word => word.match(/^[a-zA-Z'-]+$/));
+                    for (const word of words) {
+                        const cleanedWord = word.toLowerCase().replace(/[^a-z'-]/g, ''); // Loại bỏ ký tự không phải chữ cái, nháy đơn, gạch nối
+                        if (cleanedWord) {
+                            const wordInfo = await fetchWordData(cleanedWord);
+                            wordData.words[cleanedWord] = { phonetic: wordInfo.phonetic, pos: wordInfo.pos };
+                        }
+                    }
                 }
-
                 return wordData;
             }
 
-            function addNoteBox(text, fontSize, wordData = {}) {
+            function updateNoteMeta(noteBox, wordData) {
+                const noteMeta = noteBox.querySelector('.note-meta');
+                if (!noteMeta) return;
+
+                noteMeta.innerHTML = ''; // Xóa nội dung cũ
+
+                const { phrase, words } = wordData;
+
+                if (phrase && (phrase.phonetic || phrase.pos || phrase.translation)) {
+                    let phraseHtml = `<span class="phrase-phonetic">`;
+                    if (phrase.pos) phraseHtml += `(${phrase.pos}) `;
+                    if (phrase.phonetic) phraseHtml += `/${phrase.phonetic}/`;
+                    phraseHtml += `</span>`;
+                    if (phrase.translation) {
+                        phraseHtml += `<span class="separator">–</span><span class="translation">${phrase.translation}</span>`;
+                    }
+                    noteMeta.innerHTML += `<div>${phraseHtml}</div>`;
+                }
+
+
+                const wordsArray = Object.entries(words);
+                if (wordsArray.length > 0) {
+                    wordsArray.forEach(([word, data]) => {
+                        if (data.phonetic || data.pos) {
+                            let wordHtml = `<div><span class="word-phonetic">${word}`;
+                            if (data.pos) wordHtml += ` (${data.pos})`;
+                            if (data.phonetic) wordHtml += `<span class="phonetic">/${data.phonetic}/</span>`;
+                            wordHtml += `</span></div>`;
+                            noteMeta.innerHTML += wordHtml;
+                        }
+                    });
+                }
+
+                if (noteMeta.innerHTML.trim() === '') {
+                     if (phrase && phrase.translation) { // Trường hợp chỉ có bản dịch cho cụm dài
+                        noteMeta.innerHTML = `<div><span class="translation">${phrase.translation}</span></div>`;
+                    } else {
+                        noteMeta.textContent = 'Không có thông tin bổ sung.';
+                     }
+                }
+            }
+
+
+            function addNoteBox(text, fontSize, existingWordData = null, shouldFetch = true) {
+                removeEmptyState();
                 const noteBox = document.createElement('div');
                 noteBox.className = 'note-box';
                 noteBox.dataset.text = text;
                 noteBox.dataset.fontSize = fontSize;
-                noteBox.dataset.wordData = JSON.stringify(wordData);
                 noteBox.dataset.isSpeaking = 'false';
 
-                const noteText = document.createElement('span');
-                noteText.className = 'note-text';
-                noteText.spellcheck = false;
-                noteText.textContent = text;
-                noteText.contentEditable = false;
-                noteText.style.fontSize = `${fontSize}px`;
-                noteText.setAttribute('aria-label', 'Nội dung ghi chú, nhấp đúp để chỉnh sửa');
 
-                noteText.addEventListener('dblclick', () => {
-                    noteText.contentEditable = true;
-                    noteText.focus();
+                const noteTopControls = document.createElement('div');
+                noteTopControls.className = 'note-top-controls';
+
+                const fontSizeControl = document.createElement('div');
+                fontSizeControl.className = 'font-size-control';
+
+                const fontSizeLabel = document.createElement('label');
+                fontSizeLabel.className = 'font-size-label';
+                fontSizeLabel.textContent = 'Cỡ:';
+                const uniqueId = `fontSize-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                fontSizeLabel.htmlFor = uniqueId;
+
+                const fontSizeInput = document.createElement('input');
+                fontSizeInput.className = 'font-size-input';
+                fontSizeInput.type = 'number';
+                fontSizeInput.min = '12';
+                fontSizeInput.max = '128';
+                fontSizeInput.value = fontSize;
+                fontSizeInput.id = uniqueId;
+                fontSizeInput.setAttribute('aria-label', 'Cỡ chữ của ghi chú');
+
+                const noteTextSpan = document.createElement('span'); // Sẽ được định nghĩa sau
+
+                fontSizeInput.addEventListener('input', () => {
+                    const newSize = fontSizeInput.value;
+                    noteTextSpan.style.fontSize = `${newSize}px`;
+                    noteBox.dataset.fontSize = newSize;
+                    saveNotes();
+                });
+                fontSizeInput.addEventListener('change', () => { // Đảm bảo lưu khi focus out
+                     const newSize = fontSizeInput.value;
+                    noteTextSpan.style.fontSize = `${newSize}px`;
+                    noteBox.dataset.fontSize = newSize;
+                    saveNotes();
                 });
 
-                noteText.addEventListener('blur', async () => {
-                    noteText.contentEditable = false;
-                    const newText = noteText.textContent.trim();
-                    noteBox.dataset.text = newText;
-                    const newWordData = newText ? await fetchNoteData(newText) : { phrase: {}, words: {} };
-                    noteBox.dataset.wordData = JSON.stringify(newWordData);
-                    updateNoteMeta(noteBox, newWordData);
-                });
 
-                noteText.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        noteText.blur();
-                    }
-                });
-
-                const noteMeta = document.createElement('div');
-                noteMeta.className = 'note-meta';
-                noteMeta.textContent = 'Đang tải...';
+                fontSizeControl.appendChild(fontSizeLabel);
+                fontSizeControl.appendChild(fontSizeInput);
 
                 const noteControls = document.createElement('div');
                 noteControls.className = 'note-controls';
 
-                const removeBtn = document.createElement('button');
-                removeBtn.className = 'btn remove-btn';
-                removeBtn.innerHTML = 'X';
-                removeBtn.title = 'Xóa ghi chú';
-                removeBtn.setAttribute('aria-label', 'Xóa ghi chú');
-                removeBtn.addEventListener('click', () => {
-                    notesDisplay.removeChild(noteBox);
-                    if (!notesDisplay.children.length) showEmptyState();
-                });
-
                 const speakBtn = document.createElement('button');
                 speakBtn.className = 'btn speak-btn';
-                speakBtn.innerHTML = '🔊';
+                speakBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="20px" height="20px"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path></svg>';
                 speakBtn.title = 'Đọc ghi chú';
                 speakBtn.setAttribute('aria-label', 'Đọc ghi chú');
                 speakBtn.addEventListener('click', () => {
@@ -710,282 +915,371 @@
                     }
                 });
 
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'btn remove-btn';
+                removeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="18px" height="18px"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>';
+                removeBtn.title = 'Xóa ghi chú';
+                removeBtn.setAttribute('aria-label', 'Xóa ghi chú');
+                removeBtn.addEventListener('click', () => {
+                    stopSpeaking(noteBox, speakBtn); // Dừng đọc nếu đang đọc
+                    notesDisplay.removeChild(noteBox);
+                    if (notesDisplay.children.length === 0 || (notesDisplay.children.length === 1 && notesDisplay.firstChild.classList.contains('empty-state'))) {
+                        showEmptyState();
+                    }
+                    saveNotes();
+                });
+
                 noteControls.appendChild(speakBtn);
                 noteControls.appendChild(removeBtn);
-                
-                // Đặt noteControls lên đầu, sau đó là noteText và noteMeta
-                noteBox.appendChild(noteControls);
-                noteBox.appendChild(noteText);
+
+                noteTopControls.appendChild(fontSizeControl);
+                noteTopControls.appendChild(noteControls);
+
+                noteTextSpan.className = 'note-text';
+                noteTextSpan.spellcheck = false;
+                noteTextSpan.textContent = text;
+                noteTextSpan.contentEditable = false; // Ban đầu không cho sửa
+                noteTextSpan.style.fontSize = `${fontSize}px`;
+                noteTextSpan.setAttribute('aria-label', 'Nội dung ghi chú, nhấp đúp để chỉnh sửa');
+
+                noteTextSpan.addEventListener('dblclick', () => {
+                    noteTextSpan.contentEditable = true;
+                    noteTextSpan.focus();
+                     // Lưu trạng thái trước khi sửa để có thể khôi phục nếu cần
+                    noteTextSpan.dataset.originalText = noteTextSpan.textContent;
+                });
+
+                noteTextSpan.addEventListener('blur', async () => {
+                    noteTextSpan.contentEditable = false;
+                    const newText = noteTextSpan.textContent.trim();
+                    const oldText = noteBox.dataset.text;
+
+                    if (newText === oldText) return; // Không có thay đổi thì không làm gì
+
+                    noteBox.dataset.text = newText;
+                    if (newText) {
+                        noteMeta.textContent = 'Đang tải...';
+                        const newWordData = await fetchNoteData(newText);
+                        noteBox.dataset.wordData = JSON.stringify(newWordData);
+                        updateNoteMeta(noteBox, newWordData);
+                    } else {
+                        // Nếu xóa hết text, xóa luôn wordData và meta
+                        noteBox.dataset.wordData = JSON.stringify({ phrase: {}, words: {} });
+                        updateNoteMeta(noteBox, { phrase: {}, words: {} });
+                    }
+                    saveNotes();
+                });
+
+                noteTextSpan.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        noteTextSpan.blur(); // Trigger blur để lưu và fetch data
+                    } else if (e.key === 'Escape') {
+                        noteTextSpan.textContent = noteTextSpan.dataset.originalText || noteBox.dataset.text; // Khôi phục text cũ
+                        noteTextSpan.contentEditable = false;
+                        noteTextSpan.blur(); // Bỏ focus
+                    }
+                });
+
+
+                const noteMeta = document.createElement('div');
+                noteMeta.className = 'note-meta';
+
+                noteBox.appendChild(noteTopControls);
+                noteBox.appendChild(noteTextSpan);
                 noteBox.appendChild(noteMeta);
 
-                notesDisplay.insertBefore(noteBox, notesDisplay.firstChild);
-
-                const periodCount = (text.match(/\./g) || []).length;
-                const wordCount = text.split(/\s+/).filter(word => word.match(/^[a-zA-Z]+$/)).length;
-                if (periodCount <= 1 && wordCount <= 5) {
+                if (existingWordData) {
+                    noteBox.dataset.wordData = JSON.stringify(existingWordData);
+                    updateNoteMeta(noteBox, existingWordData);
+                } else if (shouldFetch && text) {
+                    noteMeta.textContent = 'Đang tải...';
                     fetchNoteData(text).then(wordData => {
                         noteBox.dataset.wordData = JSON.stringify(wordData);
                         updateNoteMeta(noteBox, wordData);
+                        saveNotes(); // Lưu sau khi fetch xong lần đầu
                     }).catch(error => {
-                        console.error('Error fetching word data:', error);
-                        noteMeta.textContent = 'Không thể tải thông tin từ vựng';
+                        console.error("Error fetching note data on add:", error);
+                        noteMeta.textContent = 'Lỗi tải dữ liệu.';
+                         saveNotes(); // Vẫn lưu ghi chú dù có lỗi fetch
                     });
-                } else {
-                    noteMeta.textContent = '';
+                } else if (!text) { // Trường hợp text rỗng ngay từ đầu
+                    noteBox.dataset.wordData = JSON.stringify({ phrase: {}, words: {} });
+                    updateNoteMeta(noteBox, { phrase: {}, words: {} });
                 }
 
-                return noteBox;
+
+                notesDisplay.insertBefore(noteBox, notesDisplay.firstChild);
             }
 
-            function updateNoteMeta(noteBox, wordData) {
-                const noteMeta = noteBox.querySelector('.note-meta');
-                if (!noteMeta) {
-                    console.warn('noteMeta element not found');
-                    return;
+            function speakNote(text, noteBox, speakButton) {
+                if (currentSpeech) { // Dừng bất kỳ bài phát biểu nào đang diễn ra
+                    speechSynthesis.cancel();
                 }
 
-                let metaText = '';
-                const text = noteBox.dataset.text.trim();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US'; // Thiết lập ngôn ngữ
 
-                const periodCount = (text.match(/\./g) || []).length;
-                const wordCount = text.split(/\s+/).filter(word => word.match(/^[a-zA-Z]+$/)).length;
-                if (periodCount > 1 || wordCount > 5) {
-                    noteMeta.textContent = '';
-                    return;
-                }
+                utterance.onstart = () => {
+                    noteBox.dataset.isSpeaking = 'true';
+                    speakButton.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="20px" height="20px"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>'; // Pause icon
+                    speakButton.title = 'Dừng đọc';
+                };
 
-                if (text.includes(' ')) {
-                    if (wordData.phrase?.phonetic || wordData.phrase?.translation) {
-                        const phonetic = wordData.phrase.phonetic ? `<span class="phonetic">//${wordData.phrase.phonetic}//</span>` : '';
-                        const translation = wordData.phrase.translation ? `<span class="translation">${wordData.phrase.translation}</span>` : '';
-                        metaText += `<span class="word-phonetic">${text}</span> ${phonetic} ${translation}<span class="separator">||</span> `;
-                    }
-                    const words = text.split(/\s+/).filter(word => word.match(/^[a-zA-Z]+$/));
-                    words.forEach((word, index) => {
-                        const data = wordData.words[word.toLowerCase()];
-                        if (data && (data.phonetic || data.pos)) {
-                            const pos = data.pos ? `(${data.pos})` : '';
-                            const phonetic = data.phonetic ? `<span class="phonetic">//${data.phonetic}//</span>` : '';
-                            metaText += `<span class="separator"><span class="word-phonetic">${word}</span> </span>${pos} ${phonetic}`;
-                            if (index < words.length - 1) {
-                                metaText += ` <span class="separator">|</span> `;
-                            }
-                        }
-                    });
-                } else {
-                    const word = text;
-                    const data = wordData.words[word.toLowerCase()];
-                    if (data && (data.phonetic || data.pos || wordData.phrase.translation)) {
-                        const pos = data.pos ? `(${data.pos})` : '';
-                        const phonetic = data.phonetic ? `<span class="phonetic">//${data.phonetic}//</span>` : '';
-                        const translation = wordData.phrase.translation ? `<span class="translation">Dịch: ${wordData.phrase.translation}</span>` : '';
-                        metaText += `<span class="separator"><span class="word-phonetic">${word}</span> </span>${pos} ${phonetic} ${translation}`;
-                    }
-                }
+                utterance.onend = () => {
+                    noteBox.dataset.isSpeaking = 'false';
+                    speakButton.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="20px" height="20px"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path></svg>'; // Speak icon
+                    speakButton.title = 'Đọc ghi chú';
+                    currentSpeech = null;
+                };
 
-                noteMeta.innerHTML = metaText.trim() || 'Không có thông tin từ vựng';
+                utterance.onerror = (event) => {
+                    console.error('Speech synthesis error:', event.error);
+                    noteBox.dataset.isSpeaking = 'false';
+                    speakButton.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="20px" height="20px"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path></svg>'; // Speak icon
+                    speakButton.title = 'Đọc ghi chú';
+                    currentSpeech = null;
+                };
+
+                currentSpeech = utterance;
+                speechSynthesis.speak(utterance);
             }
 
-            async function postNote() {
-                let text = textInput.value.trim();
-                if (!text) return;
-
-                text = text.replace(/(?<!\n)\n(?!\n)/g, '\n\n');
-
-                postButton.classList.add('loading');
-
-                try {
-                    const emptyState = notesDisplay.querySelector('.empty-state');
-                    if (emptyState) notesDisplay.removeChild(emptyState);
-
-                    addNoteBox(text, fontSizeInput.value);
-
-                    textInput.value = '';
-                    textInput.focus();
-                } catch (error) {
-                    console.error('Error posting note:', error);
-                } finally {
-                    postButton.classList.remove('loading');
+            function stopSpeaking(noteBox, speakButton) {
+                speechSynthesis.cancel();
+                if (noteBox) noteBox.dataset.isSpeaking = 'false';
+                if (speakButton) {
+                     speakButton.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="20px" height="20px"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path></svg>'; // Speak icon
+                     speakButton.title = 'Đọc ghi chú';
                 }
+                currentSpeech = null;
             }
 
             function showEmptyState() {
-                const emptyState = document.createElement('div');
-                emptyState.className = 'empty-state';
-                emptyState.textContent = 'Chưa có ghi chú nào. Hãy nhập nội dung bên trên để bắt đầu.';
-                notesDisplay.appendChild(emptyState);
+                if (!notesDisplay.querySelector('.empty-state')) {
+                    const emptyState = document.createElement('div');
+                    emptyState.className = 'empty-state';
+                    emptyState.textContent = 'Chưa có ghi chú nào. Hãy nhập nội dung bên trên để bắt đầu.';
+                    notesDisplay.appendChild(emptyState);
+                }
             }
 
-            function speakNote(text, noteBox, speakBtn) {
-                if (speechSynthesis.speaking) speechSynthesis.cancel();
+            function removeEmptyState() {
+                const emptyState = notesDisplay.querySelector('.empty-state');
+                if (emptyState) {
+                    notesDisplay.removeChild(emptyState);
+                }
+            }
 
-                const segments = text.split(/([.,])/).filter(segment => segment.trim());
-                const isLongContent = segments.length > 5 || text.length > 100;
-                const rate = isLongContent ? 0.7 : 0.6;
-
-                noteBox.dataset.isSpeaking = 'true';
-                speakBtn.innerHTML = '⏸';
-                speakBtn.title = 'Dừng đọc';
-                speakBtn.setAttribute('aria-label', 'Dừng đọc');
-
-                segments.forEach((segment, index) => {
-                    if (segment.trim() && !/[.,]/.test(segment)) {
-                        const utterance = new SpeechSynthesisUtterance(segment.trim());
-                        utterance.lang = 'en-US';
-                        utterance.rate = rate;
-
-                        if (index < segments.length - 1) {
-                            const nextSegment = segments[index + 1];
-                            if (nextSegment === '.') {
-                                utterance.onend = () => {
-                                    if (noteBox.dataset.isSpeaking === 'true') {
-                                        setTimeout(() => {}, 80);
-                                    }
-                                };
-                            } else if (nextSegment === ',') {
-                                utterance.onend = () => {
-                                    if (noteBox.dataset.isSpeaking === 'true') {
-                                        setTimeout(() => {}, 10);
-                                    }
-                                };
-                            }
-                        }
-
-                        utterance.onend = () => {
-                            if (index === segments.length - 1 || noteBox.dataset.isSpeaking === 'false') {
-                                noteBox.dataset.isSpeaking = 'false';
-                                speakBtn.innerHTML = '🔊';
-                                speakBtn.title = 'Đọc ghi chú';
-                                speakBtn.setAttribute('aria-label', 'Đọc ghi chú');
-                            }
-                        };
-
-                        speechSynthesis.speak(utterance);
+            function saveNotes() {
+                const notes = [];
+                document.querySelectorAll('.note-box').forEach(noteBox => {
+                    try {
+                        const wordData = JSON.parse(noteBox.dataset.wordData);
+                        notes.push({
+                            text: noteBox.dataset.text,
+                            fontSize: noteBox.dataset.fontSize,
+                            wordData: wordData
+                        });
+                    } catch (e) {
+                        console.error("Error parsing wordData during save for note:", noteBox.dataset.text, e);
+                        // Lưu ghi chú mà không có wordData nếu có lỗi
+                         notes.push({
+                            text: noteBox.dataset.text,
+                            fontSize: noteBox.dataset.fontSize,
+                            wordData: { phrase: {}, words: {} } // Hoặc một giá trị mặc định an toàn
+                        });
                     }
                 });
-            }
-
-            function stopSpeaking(noteBox, speakBtn) {
-                speechSynthesis.cancel();
-                noteBox.dataset.isSpeaking = 'false';
-                speakBtn.innerHTML = '🔊';
-                speakBtn.title = 'Đọc ghi chú';
-                speakBtn.setAttribute('aria-label', 'Đọc ghi chú');
-            }
-
-            function exportNotes() {
-                const noteBoxes = notesDisplay.querySelectorAll('.note-box');
-                if (!noteBoxes.length) {
-                    alert('Không có ghi chú nào để xuất.');
-                    return;
-                }
-
-                const notes = Array.from(noteBoxes).map(box => ({
-                    text: box.dataset.text,
-                    fontSize: box.dataset.fontSize,
-                    wordData: JSON.parse(box.dataset.wordData || '{}')
+                localStorage.setItem('notesApp', JSON.stringify({
+                    notes: notes,
+                    initialFontSize: initialFontSize // Lưu cả cỡ chữ mặc định
                 }));
-
-                const dataStr = JSON.stringify({ notes });
-                const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-
-                const exportLink = document.createElement('a');
-                exportLink.setAttribute('href', dataUri);
-                exportLink.setAttribute('download', `ghi-chu-${new Date().toISOString().slice(0, 10)}.json`);
-                exportLink.click();
             }
 
-            async function importNotes(e) {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                try {
-                    const reader = new FileReader();
-                    reader.onload = async function(e) {
-                        try {
-                            const data = JSON.parse(e.target.result);
-                            notesDisplay.innerHTML = '';
-
-                            if (data.notes && Array.isArray(data.notes)) {
-                                if (!data.notes.length) {
-                                    showEmptyState();
-                                } else {
-                                    for (const note of data.notes) {
-                                        const fontSize = note.fontSize || fontSizeInput.value;
-                                        addNoteBox(note.text || '', fontSize, note.wordData || {});
-                                    }
-                                }
-                            } else {
-                                showEmptyState();
-                            }
-                        } catch (error) {
-                            alert('Không thể đọc file! Vui lòng chọn file JSON hợp lệ.');
-                            console.error('Error parsing JSON:', error);
-                            showEmptyState();
-                        }
-                    };
-                    reader.readAsText(file);
-                } catch (error) {
-                    alert('Lỗi khi đọc file! Vui lòng thử lại.');
-                    console.error('Error reading file:', error);
+            function loadNotes() {
+                const data = localStorage.getItem('notesApp');
+                if (data) {
+                    const parsedData = JSON.parse(data);
+                    if (parsedData.initialFontSize) {
+                        initialFontSize = parseInt(parsedData.initialFontSize, 10);
+                        initialFontSizeInput.value = initialFontSize;
+                    }
+                    if (parsedData.notes && parsedData.notes.length > 0) {
+                        parsedData.notes.forEach(note => {
+                            addNoteBox(note.text, parseInt(note.fontSize, 10), note.wordData, false); // false để không fetch lại
+                        });
+                        removeEmptyState();
+                    } else {
+                        showEmptyState();
+                    }
+                } else {
                     showEmptyState();
                 }
             }
 
-            function updateFontSize() {
-                const fontSize = fontSizeInput.value;
-                document.querySelectorAll('.note-box').forEach(box => {
-                    box.querySelector('.note-text').style.fontSize = `${fontSize}px`;
-                    box.dataset.fontSize = fontSize;
-                });
-            }
-
-            function toggleInputVisibility() {
-                if (inputControls.classList.contains('hidden')) {
-                    inputControls.classList.remove('hidden');
-                    hideInputBtn.querySelector('span').textContent = 'Hide';
-                    hideInputBtn.querySelector('svg').innerHTML = '<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>';
-                    hideInputBtn.setAttribute('aria-label', 'Ẩn thanh nhập');
-                } else {
-                    inputControls.classList.add('hidden');
-                    hideInputBtn.querySelector('span').textContent = 'Show';
-                    hideInputBtn.querySelector('svg').innerHTML = '<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>';
-                    hideInputBtn.setAttribute('aria-label', 'Hiện thanh nhập');
+            postButton.addEventListener('click', async () => {
+                const text = textInput.value.trim();
+                if (text) {
+                    postButton.classList.add('loading');
+                    postButton.disabled = true;
+                    try {
+                        // Không cần fetchNoteData ở đây nữa, nó sẽ được gọi trong addNoteBox
+                        addNoteBox(text, initialFontSize, null, true); // true để fetch data cho note mới
+                        textInput.value = '';
+                        saveNotes(); // Lưu sau khi thêm thành công
+                    } catch (error) {
+                        console.error("Error posting note:", error);
+                        // Có thể thêm thông báo lỗi cho người dùng ở đây
+                    } finally {
+                        postButton.classList.remove('loading');
+                        postButton.disabled = false;
+                        textInput.focus();
+                    }
                 }
-            }
+            });
 
-            function toggleFullscreen() {
-                if (!document.fullscreenElement) {
-                    document.documentElement.requestFullscreen().then(() => {
-                        fullscreenBtn.style.display = 'none';
-                        exitFullscreenBtn.style.display = 'flex';
-                    }).catch(err => {
-                        console.error('Error entering fullscreen:', err);
-                    });
+            textInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    postButton.click();
+                }
+            });
+
+            exportBtn.addEventListener('click', () => {
+                const data = localStorage.getItem('notesApp');
+                if (data) {
+                    const blob = new Blob([data], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'notes_backup.json';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
                 } else {
-                    document.exitFullscreen().then(() => {
+                    alert('Không có ghi chú nào để xuất!');
+                }
+            });
+
+            importBtn.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const importedDataString = e.target.result;
+                            // Kiểm tra xem có phải là file từ Google Sheet được xử lý bởi hàm loadFileData không
+                            if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls') || file.name.endsWith('.csv')) {
+                                gk_isXlsx = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
+                                gk_fileData[file.name] = btoa(importedDataString); // Giả sử file excel/csv đọc dưới dạng binary string
+                                const csvData = loadFileData(file.name);
+                                if (csvData) {
+                                    // Xử lý csvData thành dạng notes
+                                    // Đây là một ví dụ đơn giản, bạn cần điều chỉnh cho phù hợp với cấu trúc file CSV của bạn
+                                    const rows = csvData.split('\n');
+                                    const notesToImport = rows.slice(1) // Bỏ qua header
+                                        .map(row => {
+                                            const columns = row.split(',');
+                                            return columns[0] ? columns[0].trim() : null; // Giả sử cột đầu tiên là nội dung note
+                                        })
+                                        .filter(text => text);
+
+                                    if (notesToImport.length > 0) {
+                                        if (confirm(`Bạn có muốn nhập ${notesToImport.length} ghi chú từ file ${file.name} không? Các ghi chú hiện tại sẽ được giữ lại.`)) {
+                                            notesToImport.forEach(text => addNoteBox(text, initialFontSize, null, true));
+                                            saveNotes();
+                                            alert('Nhập ghi chú thành công!');
+                                        }
+                                    } else {
+                                        alert('Không tìm thấy dữ liệu ghi chú hợp lệ trong file.');
+                                    }
+                                } else {
+                                    alert('Không thể xử lý file Excel/CSV.');
+                                }
+
+                            } else if (file.name.endsWith('.json')) { // Xử lý file JSON backup
+                                const importedData = JSON.parse(importedDataString);
+                                if (importedData && importedData.notes) {
+                                     if (confirm('Bạn có muốn nhập các ghi chú từ file này không? Các ghi chú hiện tại sẽ được XÓA và thay thế bằng dữ liệu mới.')) {
+                                        notesDisplay.innerHTML = ''; // Xóa các ghi chú hiện tại
+                                        localStorage.setItem('notesApp', importedDataString); // Lưu trực tiếp dữ liệu mới
+                                        loadNotes(); // Tải lại từ dữ liệu vừa import
+                                        alert('Nhập ghi chú thành công!');
+                                    }
+                                } else {
+                                    alert('File JSON không hợp lệ.');
+                                }
+                            } else {
+                                alert('Loại file không được hỗ trợ. Vui lòng chọn file .json, .xlsx, .xls hoặc .csv.');
+                            }
+                        } catch (error) {
+                            console.error('Lỗi khi nhập file:', error);
+                            alert('Đã xảy ra lỗi khi nhập file. Vui lòng kiểm tra console.');
+                        } finally {
+                            fileInput.value = ''; // Reset file input
+                        }
+                    };
+                    if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                        reader.readAsBinaryString(file); // Đọc file excel dạng binary
+                    } else {
+                        reader.readAsText(file); // Đọc file json/csv dạng text
+                    }
+                }
+            });
+
+
+            hideInputBtn.addEventListener('click', () => {
+                inputControls.classList.toggle('hidden');
+                const icon = hideInputBtn.querySelector('svg');
+                const span = hideInputBtn.querySelector('span');
+                if (inputControls.classList.contains('hidden')) {
+                    icon.innerHTML = '<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>'; // Show icon
+                    span.textContent = 'Show';
+                    hideInputBtn.setAttribute('aria-label', 'Hiện thanh nhập');
+                } else {
+                    icon.innerHTML = '<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>'; // Hide icon
+                    span.textContent = 'Hide';
+                    hideInputBtn.setAttribute('aria-label', 'Ẩn thanh nhập');
+                }
+            });
+
+            function toggleFullScreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
+                    fullscreenBtn.style.display = 'none';
+                    exitFullscreenBtn.style.display = 'flex';
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
                         fullscreenBtn.style.display = 'flex';
                         exitFullscreenBtn.style.display = 'none';
-                    }).catch(err => {
-                        console.error('Error exiting fullscreen:', err);
-                    });
+                    }
                 }
             }
 
-            postButton.addEventListener('click', postNote);
-            textInput.addEventListener('keypress', e => {
-                //if (e.key === 'Enter' && !e.shiftKey) {
-                    //e.preventDefault();
-                    //postNote();
-                //}
+            fullscreenBtn.addEventListener('click', toggleFullScreen);
+            exitFullscreenBtn.addEventListener('click', toggleFullScreen);
+
+            document.addEventListener('fullscreenchange', () => {
+                if (!document.fullscreenElement) {
+                    fullscreenBtn.style.display = 'flex';
+                    exitFullscreenBtn.style.display = 'none';
+                } else {
+                    fullscreenBtn.style.display = 'none';
+                    exitFullscreenBtn.style.display = 'flex';
+                }
             });
-            fontSizeInput.addEventListener('input', updateFontSize);
-            exportBtn.addEventListener('click', exportNotes);
-            importBtn.addEventListener('click', () => fileInput.click());
-            fileInput.addEventListener('change', importNotes);
-            hideInputBtn.addEventListener('click', toggleInputVisibility);
-            fullscreenBtn.addEventListener('click', toggleFullscreen);
-            exitFullscreenBtn.addEventListener('click', toggleFullscreen);
+
+
+            // Load notes from localStorage when the page loads
+            loadNotes();
+            textInput.focus(); // Focus vào text input khi tải trang
         });
     </script>
 </body>
