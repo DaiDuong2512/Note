@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ứng dụng Ghi chú</title>
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/6328/6328115.png">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&family=Roboto:wght@500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -247,7 +247,7 @@
         }
         
         .note-text {
-            font-weight: 500;
+            font-weight: 600;
             flex-grow: 1;
             outline: none;
             cursor: pointer;
@@ -258,6 +258,7 @@
         .note-text[contenteditable]:focus {
             background-color: #fff;
             border-radius: 4px;
+            font-weight: 600;
             padding: 4px;
         }
         
@@ -296,6 +297,7 @@
             display: flex;
             gap: 8px;
             justify-content: flex-end; /* Align buttons to the right */
+            margin-bottom: 8px; /* Add spacing below note-controls */
         }
         
         .btn {
@@ -710,9 +712,11 @@
 
                 noteControls.appendChild(speakBtn);
                 noteControls.appendChild(removeBtn);
+                
+                // Đặt noteControls lên đầu, sau đó là noteText và noteMeta
+                noteBox.appendChild(noteControls);
                 noteBox.appendChild(noteText);
                 noteBox.appendChild(noteMeta);
-                noteBox.appendChild(noteControls);
 
                 notesDisplay.insertBefore(noteBox, notesDisplay.firstChild);
 
