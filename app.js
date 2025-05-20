@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
             border: 1px solid #ddd;
             border-radius: 8px;
             text-align: center;
-            font-size: 14px;
+            font-size: 36px;
         }
     </style>
 </head>
