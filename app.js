@@ -68,7 +68,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const mobileStyles = `
             @media (max-width: 480px) {
                 .note-text {
-                    font-size: calc(var(--original-font-size) * 0.7) !important;
+                    font-size: 32px !important;
+                }
+                .note-meta {
+                    font-size: 16px !important;
                 }
             }
         `;
@@ -103,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
             border: 1px solid #ddd;
             border-radius: 8px;
             text-align: center;
-            font-size: 36px;
+            font-size: 14px;
         }
     </style>
 </head>
