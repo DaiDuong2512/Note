@@ -326,34 +326,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentSpeech = null;
             };
 
-            // Đảm bảo currentSpeech được set trước khi phát âm
+            // Đảm bảo currentSpeech được set và phát âm chỉ một lần
             currentSpeech = utterance;
-            
-            // Phát âm thanh
             setTimeout(() => {
                 speechSynthesis.speak(utterance);
             }, 100); // Thêm delay nhỏ để đảm bảo giọng đọc được áp dụng
-
-            utterance.onend = () => {
-                if (noteBox) noteBox.dataset.isSpeaking = 'false';
-                if (speakButton) {
-                    speakButton.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="20px" height="20px"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path></svg>';
-                    speakButton.title = 'Đọc ghi chú';
-                }
-                currentSpeech = null;
-            };
-
-            utterance.onerror = (event) => {
-                console.error('Lỗi đọc:', event.error);
-                if (noteBox) noteBox.dataset.isSpeaking = 'false';
-                if (speakButton) {
-                    speakButton.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="20px" height="20px"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path></svg>';
-                    speakButton.title = 'Đọc ghi chú';
-                }
-                currentSpeech = null;
-            };
-
-            speechSynthesis.speak(utterance);
         }
 
         // Xử lý chỉnh cỡ chữ
