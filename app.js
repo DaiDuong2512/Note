@@ -172,6 +172,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function createHtmlContent(date, notesHtml, styles) {
+        // Sắp xếp notes từ mới đến cũ
+        const notesContainer = document.createElement('div');
+        notesContainer.innerHTML = notesHtml;
+        const notes = Array.from(notesContainer.querySelectorAll('.note-box'));
+        notesContainer.innerHTML = '';
+        // Thêm lại notes theo thứ tự mới nhất lên trên
+        notes.forEach(note => notesContainer.appendChild(note));
+
         const mobileStyles = `
             @media (max-width: 480px) {
                 .note-text {
@@ -184,7 +192,7 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
 
         // Loại bỏ nút xóa khỏi HTML
-        const processedNotesHtml = notesHtml.replace(/<button[^>]*class="[^"]*remove-btn[^"]*"[^>]*>.*?<\/button>/gs, '');
+        const processedNotesHtml = notesContainer.innerHTML.replace(/<button[^>]*class="[^"]*remove-btn[^"]*"[^>]*>.*?<\/button>/gs, '');
 
         const htmlContent = `
 <!DOCTYPE html>
@@ -686,25 +694,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }));
     }
 
+    // Load notes từ localStorage và hiển thị theo thứ tự mới nhất trước
     function loadNotes() {
-        const data = localStorage.getItem('notesApp');
-        if (data) {
-            const parsedData = JSON.parse(data);
-            if (parsedData.initialFontSize) {
-                initialFontSize = parseInt(parsedData.initialFontSize, 10);
-                initialFontSizeInput.value = initialFontSize;
-            }
-            if (parsedData.notes && parsedData.notes.length > 0) {
-                parsedData.notes.forEach(note => {
-                    addNoteBox(note.text, parseInt(note.fontSize, 10), note.wordData, false);
-                });
-                removeEmptyState();
-            } else {
-                showEmptyState();
-            }
-        } else {
-            showEmptyState();
-        }
+        const notes = JSON.parse(localStorage.getItem('notes') || '[]');
+        const notesContainer = document.querySelector('.notes');
+        notesContainer.innerHTML = '';
+        
+        // Hiển thị từ mới đến cũ
+        notes.reverse().forEach(note => {
+            const noteBox = createNoteElement(note.text, note.languageCode, note.id);
+            notesContainer.appendChild(noteBox);
+        });
     }
 
     function addNoteBox(text, fontSize, existingWordData = null, shouldFetch = true) {
@@ -714,6 +714,20 @@ document.addEventListener('DOMContentLoaded', function() {
             return noteBox;
         }
         return null;
+    }
+
+    // Thêm ghi chú vào đầu mảng để hiển thị mới nhất lên trên  
+    function addNewNote(text, languageCode = 'vi', id = null) {
+        if (!text) return;
+
+        const noteBox = createNoteElement(text, languageCode, id);
+        const notesContainer = document.querySelector('.notes');
+        // Thêm note mới lên đầu danh sách
+        notesContainer.insertBefore(noteBox, notesContainer.firstChild);
+        saveNotes();
+        
+        // Tự động phát âm ghi chú mới
+        speakNote(text, noteBox, noteBox.querySelector('.speak-btn'));
     }
 
     postButton.addEventListener('click', async () => {
@@ -858,4 +872,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Load saved notes when page loads
     loadNotes();
-}); 
+});
