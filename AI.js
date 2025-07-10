@@ -1,7 +1,7 @@
 
 
 const GEMINI_API_KEY = 'AIzaSyDOauJlzUdsUsOadS8_waJGWrLtjbjVNmE';
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 // Hàm gọi API Gemini để dịch văn bản
 async function fetchGeminiTranslation(text) {
