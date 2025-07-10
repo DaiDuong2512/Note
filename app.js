@@ -1,39 +1,3 @@
-var gk_isXlsx = false;
-var gk_xlsxFileLookup = {};
-var gk_fileData = {};
-
-function filledCell(cell) {
-    return cell !== '' && cell != null;
-}
-
-function loadFileData(filename) {
-    if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-        try {
-            var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-            var firstSheetName = workbook.SheetNames[0];
-            var worksheet = workbook.Sheets[firstSheetName];
-
-            var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-            var filteredData = jsonData.filter(row => row.some(filledCell));
-
-            var headerRowIndex = filteredData.findIndex((row, index) =>
-                row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-            );
-            if (headerRowIndex === -1 || headerRowIndex > 25) {
-                headerRowIndex = 0;
-            }
-
-            var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
-            csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-            return csv;
-        } catch (e) {
-            console.error('Error processing XLSX:', e);
-            return "";
-        }
-    }
-    return gk_fileData[filename] || "";
-}
-
 document.addEventListener('DOMContentLoaded', function() {
     const textInput = document.getElementById('textInput');
     const postButton = document.getElementById('postButton');
@@ -47,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const fullscreenBtn = document.getElementById('fullscreenBtn');
     const exitFullscreenBtn = document.getElementById('exitFullscreenBtn');
     const clearAllBtn = document.getElementById('clearAllBtn');
+    const generateSampleBtn = document.getElementById('generateSampleBtn');
 
     const MW_API_KEY = '41df0ea1-5bee-4925-93ed-7070a944a385';
     const commonVerbs = new Set(['go', 'run', 'eat', 'drink', 'sleep', 'write', 'read', 'speak', 'listen', 'walk', 'be', 'have', 'do', 'say', 'get', 'make', 'know', 'think', 'take', 'see', 'come', 'want', 'look', 'use', 'find', 'give', 'tell']);
@@ -59,11 +24,61 @@ document.addEventListener('DOMContentLoaded', function() {
         'conjunction': 'conj',
         'pronoun': 'pron',
         'interjection': 'int'
-    };
-
-    let currentSpeech = null;
+    };    let currentSpeech = null;
     let voices = [];
-    let initialFontSize = parseInt(initialFontSizeInput.value, 10);
+    let initialFontSize = parseInt(initialFontSizeInput.value, 10);    // Hàm lưu trạng thái giao diện
+    function saveUIState() {
+        const uiState = {
+            inputControlsHidden: inputControls.classList.contains('hidden'),
+            initialFontSize: initialFontSize,
+            hideInputBtnText: hideInputBtn.querySelector('span').textContent,
+            scrollTop: notesDisplay.scrollTop
+        };
+        localStorage.setItem('notesAppUIState', JSON.stringify(uiState));
+    }
+
+    // Hàm khôi phục trạng thái giao diện
+    function loadUIState() {
+        try {
+            const savedUIState = localStorage.getItem('notesAppUIState');
+            if (savedUIState) {
+                const uiState = JSON.parse(savedUIState);
+                
+                // Khôi phục trạng thái ẩn/hiện input controls
+                if (uiState.inputControlsHidden) {
+                    inputControls.classList.add('hidden');
+                    hideInputBtn.querySelector('span').textContent = 'Show';
+                } else {
+                    inputControls.classList.remove('hidden');
+                    hideInputBtn.querySelector('span').textContent = 'Hide';
+                }
+                
+                // Khôi phục fontSize ban đầu
+                if (uiState.initialFontSize) {
+                    initialFontSize = uiState.initialFontSize;
+                    initialFontSizeInput.value = initialFontSize;
+                }
+                
+                // Khôi phục vị trí scroll (sau khi notes được load)
+                if (uiState.scrollTop) {
+                    setTimeout(() => {
+                        notesDisplay.scrollTop = uiState.scrollTop;
+                    }, 100);
+                }
+            }
+        } catch (error) {
+            console.warn('Error loading UI state:', error);
+        }
+    }
+
+    // Lưu scroll position khi người dùng scroll
+    let scrollSaveTimeout;
+    notesDisplay.addEventListener('scroll', () => {
+        clearTimeout(scrollSaveTimeout);
+        scrollSaveTimeout = setTimeout(() => {
+            saveUIState();
+        }, 500); // Debounce 500ms để tránh lưu quá nhiều
+    });
 
     function stopSpeaking() {
         if (currentSpeech) {
@@ -169,15 +184,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
         currentSpeech = utterance;
         speechSynthesis.speak(utterance);
-    }
-
-    function createHtmlContent(date, notesHtml, styles) {
-        // Sắp xếp notes từ mới đến cũ
+    }    async function createHtmlContent(date, notesHtml, styles) {
+        // Lấy notes theo đúng thứ tự hiện tại (mới nhất ở trên)
         const notesContainer = document.createElement('div');
         notesContainer.innerHTML = notesHtml;
         const notes = Array.from(notesContainer.querySelectorAll('.note-box'));
+        
+        // Không cần sắp xếp lại vì notes đã được hiển thị đúng thứ tự
         notesContainer.innerHTML = '';
-        // Thêm lại notes theo thứ tự mới nhất lên trên
         notes.forEach(note => notesContainer.appendChild(note));
 
         const mobileStyles = `
@@ -191,8 +205,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         `;
 
-        // Loại bỏ nút xóa khỏi HTML
-        const processedNotesHtml = notesContainer.innerHTML.replace(/<button[^>]*class="[^"]*remove-btn[^"]*"[^>]*>.*?<\/button>/gs, '');
+        // Loại bỏ nút xóa và nút retry khỏi HTML export
+        const processedNotesHtml = notesContainer.innerHTML
+            .replace(/<button[^>]*class="[^"]*remove-btn[^"]*"[^>]*>.*?<\/button>/gs, '')
+            .replace(/<div[^>]*class="[^"]*retry-container[^"]*"[^>]*>.*?<\/div>/gs, '');
 
         const htmlContent = `
 <!DOCTYPE html>
@@ -367,17 +383,80 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
-        // Khởi tạo voices khi trang load
-        initVoices();
-    </script>
-</body>
-</html>`;
 
-        return htmlContent;
+    // Xử lý nút tạo đoạn văn mẫu bằng AI
+    const generateSampleBtn = document.getElementById('generateSampleBtn');
+    if (generateSampleBtn) {
+        console.log('✅ Generate Sample Button found, setting up event listener...');
+        
+        generateSampleBtn.addEventListener('click', async () => {
+            console.log('🔥 Generate Sample Button clicked!');
+            
+            // Nếu đang loading thì không làm gì
+            if (generateSampleBtn.classList.contains('loading')) {
+                console.log('⏳ Button is already loading, ignoring click.');
+                return;
+            }
+            
+            try {
+                // Thêm hiệu ứng loading
+                generateSampleBtn.classList.add('loading');
+                generateSampleBtn.title = 'Đang tạo mẫu...';
+                console.log('⏳ Loading state activated');
+                
+                // Tạo đoạn văn mẫu
+                console.log('🤖 Calling generateRandomSample...');
+                const sampleText = await generateRandomSample();
+                console.log('✅ Sample generated:', sampleText);
+                
+                // Đưa vào ô input
+                textInput.value = sampleText;
+                textInput.focus();
+                
+                // Hiệu ứng cho thấy text đã được thêm
+                textInput.style.background = 'linear-gradient(135deg, #e8f5e8, #f0f8ff)';
+                setTimeout(() => {
+                    textInput.style.background = '';
+                }, 1000);
+                
+                console.log('📝 Sample added to input: "' + sampleText + '"');
+                
+            } catch (error) {
+                console.error('❌ Error generating sample:', error);
+                
+                // Fallback: thêm một mẫu có sẵn
+                const fallbackSamples = [
+                    'beautiful day',
+                    'look forward to',
+                    'break the ice',
+                    'How are you?',
+                    'take care',
+                    'good morning',
+                    'coffee shop',
+                    'make sense'
+                ];
+                const fallback = fallbackSamples[Math.floor(Math.random() * fallbackSamples.length)];
+                textInput.value = fallback;
+                textInput.focus();
+                console.log('🔄 Used fallback sample: "' + fallback + '"');
+                
+            } finally {
+                // Loại bỏ hiệu ứng loading
+                generateSampleBtn.classList.remove('loading');
+                generateSampleBtn.title = 'Tạo đoạn văn mẫu bằng AI';
+                console.log('✅ Loading state removed');
+            }
+        });
+    } else {
+        console.error('❌ Generate Sample Button not found! Check HTML ID.');
     }
 
-    async function fetchTranslation(text) {
-        if (!text || /^\s*$/.test(text)) return '';
+    // Load saved notes and UI state when page loads
+    loadUIState();
+    loadNotes();
+});
+`
+    if (!text || /^\s*$/.test(text)) return '';
         try {
             const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=${encodeURIComponent(text)}`);
             if (response.ok) {
@@ -389,13 +468,12 @@ document.addEventListener('DOMContentLoaded', function() {
             console.warn(`Google Translate API error for "${text}":`, error);
             return '';
         }
-    }
-
-    async function fetchWordData(text) {
+    }    async function fetchWordData(text) {
         let phonetic = '';
         let pos = '';
         let translation = '';
 
+        // Lấy phiên âm từ Free Dictionary API
         try {
             const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(text)}`);
             if (response.ok) {
@@ -405,9 +483,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 phonetic = phonetic.replace(/^\/|\/$/g, '');
             }
         } catch (error) {
-            console.warn(`Free Dictionary API error for "${text}":`, error);
+            console.warn(`⚠️ Free Dictionary API error for "${text}":`, error);
         }
 
+        // Lấy loại từ từ Merriam-Webster (chỉ cho từ đơn)
         if (!text.includes(' ')) {
             try {
                 const response = await fetch(`https://www.dictionaryapi.com/api/v3/references/collegiate/json/${text}?key=${MW_API_KEY}`);
@@ -415,6 +494,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const data = await response.json();
                     if (data && data.length > 0 && typeof data[0] === 'object') {
                         let entry = data[0];
+                        // Ưu tiên động từ cho các từ thông dụng
                         if (commonVerbs.has(text.toLowerCase())) {
                             const verbEntry = data.find(item => typeof item === 'object' && item.fl === 'verb');
                             if (verbEntry) entry = verbEntry;
@@ -423,47 +503,123 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             } catch (error) {
-                console.warn(`Merriam-Webster API error for "${text}":`, error);
+                console.warn(`⚠️ Merriam-Webster API error for "${text}":`, error);
             }
         }
 
-        translation = await fetchTranslation(text);
-        return { phonetic, pos, translation };
-    }
+        // Lấy bản dịch - bắt buộc phải có
+        try {
+            translation = await fetchTranslation(text);
+            if (!translation) {
+                throw new Error('Translation is empty');
+            }
+        } catch (error) {
+            console.error(`❌ Translation failed for "${text}":`, error);
+            throw new Error(`Cannot translate "${text}"`);
+        }
 
-    async function fetchNoteData(text) {
+        return { phonetic, pos, translation };
+    }// Hàm fetchNoteData gốc (dự phòng khi Gemini lỗi)
+    async function fetchNoteDataFallback(text) {
         const trimmedText = text.trim();
         if (!trimmedText) return { phrase: {}, words: {} };
 
+        console.log('🔄 Using fallback translation method...');
+        
         const periodCount = (trimmedText.match(/\./g) || []).length;
         const wordCount = trimmedText.split(/\s+/).filter(word => word.match(/^[a-zA-Z'-]+$/)).length;
 
-        if (periodCount > 1 || wordCount > 7) {
-            const phraseTranslation = await fetchTranslation(trimmedText);
-            return { phrase: { translation: phraseTranslation }, words: {} };
-        }
-
-        const wordData = { phrase: {}, words: {} };
-        wordData.phrase = await fetchWordData(trimmedText);
-
-        if (wordCount > 1) {
-            const words = trimmedText.split(/\s+/).filter(word => word.match(/^[a-zA-Z'-]+$/));
-            for (const word of words) {
-                const cleanedWord = word.toLowerCase().replace(/[^a-z'-]/g, '');
-                if (cleanedWord) {
-                    const wordInfo = await fetchWordData(cleanedWord);
-                    wordData.words[cleanedWord] = { phonetic: wordInfo.phonetic, pos: wordInfo.pos };
-                }
+        // Đối với đoạn văn dài (nhiều câu hoặc từ 8 từ trở lên), chỉ dịch nghĩa
+        if (periodCount > 1 || wordCount >= 8) {
+            try {
+                const phraseTranslation = await fetchTranslation(trimmedText);
+                return { phrase: { phonetic: '', pos: '', translation: phraseTranslation }, words: {} };
+            } catch (error) {
+                console.error('❌ Fallback translation failed for long text:', error);
+                throw new Error('Fallback translation failed');
             }
         }
-        return wordData;
-    }
 
-    function updateNoteMeta(noteBox, wordData) {
+        // Đối với từ đơn và cụm từ ngắn
+        try {
+            const wordData = { phrase: {}, words: {} };
+            
+            // Lấy thông tin cho toàn bộ cụm từ
+            wordData.phrase = await fetchWordData(trimmedText);
+            
+            // Nếu có nhiều từ, phân tích từng từ riêng biệt
+            if (wordCount > 1 && wordCount <= 7) {
+                const words = trimmedText.split(/\s+/).filter(word => word.match(/^[a-zA-Z'-]+$/));
+                
+                // Giới hạn số từ để tránh quá tải API
+                const wordsToProcess = words.slice(0, 5); // Chỉ xử lý tối đa 5 từ
+                
+                for (const word of wordsToProcess) {
+                    const cleanedWord = word.toLowerCase().replace(/[^a-z'-]/g, '');
+                    if (cleanedWord && cleanedWord.length > 1) { // Bỏ qua từ quá ngắn
+                        try {
+                            const wordInfo = await fetchWordData(cleanedWord);
+                            if (wordInfo.phonetic || wordInfo.pos) {
+                                wordData.words[cleanedWord] = { 
+                                    phonetic: wordInfo.phonetic, 
+                                    pos: wordInfo.pos 
+                                };
+                            }
+                        } catch (wordError) {
+                            console.warn(`⚠️ Error fetching data for word "${cleanedWord}":`, wordError);
+                            // Tiếp tục với từ tiếp theo thay vì dừng lại
+                        }
+                    }
+                }
+            }
+            
+            // Đảm bảo có ít nhất bản dịch
+            if (!wordData.phrase.translation) {
+                throw new Error('No translation available');
+            }
+            
+            console.log('✅ Fallback translation completed successfully');
+            return wordData;
+            
+        } catch (error) {
+            console.error('❌ Fallback method completely failed:', error);
+            throw new Error('All translation methods failed');
+        }
+    }// Hàm fetchNoteData chính với Gemini AI và fallback
+    async function fetchNoteData(text, isNewNote = true) {
+        try {
+            // Thử dùng Gemini AI trước
+            console.log('🤖 Đang dịch bằng Gemini AI...');
+            return await fetchNoteDataWithGemini(text, isNewNote);
+        } catch (error) {
+            console.warn('⚠️ Gemini AI gặp lỗi, chuyển sang phương thức dự phòng:', error);
+            // Nếu Gemini lỗi, dùng phương thức gốc
+            try {
+                console.log('🔄 Đang dịch bằng phương thức dự phòng...');
+                return await fetchNoteDataFallback(text);
+            } catch (fallbackError) {
+                console.error('❌ Cả hai phương thức dịch đều lỗi:', fallbackError);
+                // Trả về dữ liệu đặc biệt để báo hiệu lỗi
+                return { 
+                    phrase: {}, 
+                    words: {}, 
+                    hasTranslationError: true,
+                    originalText: text
+                };
+            }
+        }
+    }    function updateNoteMeta(noteBox, wordData) {
         const noteMeta = noteBox.querySelector('.note-meta');
         if (!noteMeta) return;
 
         noteMeta.innerHTML = '';
+        
+        // Kiểm tra nếu có lỗi dịch
+        if (wordData.hasTranslationError) {
+            createRetryButton(noteBox, wordData.originalText, noteMeta);
+            return;
+        }
+        
         const { phrase, words } = wordData;
 
         if (phrase && (phrase.phonetic || phrase.pos || phrase.translation)) {
@@ -483,7 +639,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.phonetic || data.pos) {
                     let wordHtml = `<div><span class="word-phonetic">${word}`;
                     if (data.pos) wordHtml += `<span class="phrase-phonetic"> (${data.pos})</span>`;
-                    if (data.phonetic) wordHtml += `<span class="phonetic">/${data.phonetic}/</span>`;
+                    if (data.phonetic) wordHtml += `<span class="phonetic"> /${data.phonetic}/</span>`;
                     wordHtml += `</span></div>`;
                     noteMeta.innerHTML += wordHtml;
                 }
@@ -499,13 +655,98 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function createNoteElement(text, fontSize, existingWordData = null, shouldFetch = true) {
+    // Tạo nút "Dịch lại" khi gặp lỗi
+    function createRetryButton(noteBox, originalText, noteMeta) {
+        const retryContainer = document.createElement('div');
+        retryContainer.className = 'retry-container';
+        retryContainer.style.cssText = `
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            margin: 4px 0;
+        `;
+        
+        const errorMessage = document.createElement('span');
+        errorMessage.textContent = 'Lỗi dịch. ';
+        errorMessage.style.color = '#856404';
+        errorMessage.style.fontSize = '12px';
+        
+        const retryButton = document.createElement('button');
+        retryButton.className = 'retry-btn';
+        retryButton.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21C9.61 21 7.46 19.96 6 18.34" 
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M3 18L6 18.34L6.34 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Dịch lại
+        `;
+        retryButton.style.cssText = `
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        `;
+        
+        retryButton.addEventListener('mouseenter', () => {
+            retryButton.style.background = '#0056b3';
+            retryButton.style.transform = 'scale(1.05)';
+        });
+        
+        retryButton.addEventListener('mouseleave', () => {
+            retryButton.style.background = '#007bff';
+            retryButton.style.transform = 'scale(1)';
+        });
+        
+        retryButton.addEventListener('click', async () => {
+            retryButton.disabled = true;
+            retryButton.innerHTML = 'Đang dịch...';
+            retryButton.style.background = '#6c757d';
+            
+            try {
+                const newWordData = await fetchNoteData(originalText, false);
+                
+                // Loại bỏ thông tin lỗi khỏi wordData trước khi lưu
+                const cleanWordData = { ...newWordData };
+                delete cleanWordData.hasTranslationError;
+                delete cleanWordData.originalText;
+                
+                noteBox.dataset.wordData = JSON.stringify(cleanWordData);
+                updateNoteMeta(noteBox, cleanWordData);
+                saveNotes();
+                
+                console.log('✅ Retry translation successful');
+            } catch (error) {
+                console.error('❌ Retry translation failed:', error);
+                // Tạo lại nút retry nếu vẫn lỗi
+                createRetryButton(noteBox, originalText, noteMeta);
+            }
+        });
+        
+        retryContainer.appendChild(errorMessage);
+        retryContainer.appendChild(retryButton);
+        noteMeta.appendChild(retryContainer);
+    }    function createNoteElement(text, fontSize, existingWordData = null, shouldFetch = true) {
         removeEmptyState();
         const noteBox = document.createElement('div');
         noteBox.className = 'note-box';
         noteBox.dataset.text = text;
         noteBox.dataset.fontSize = fontSize;
         noteBox.dataset.isSpeaking = 'false';
+        noteBox.dataset.timestamp = Date.now(); // Thêm timestamp cho note mới
+
+        // ...existing code...
 
         const noteTopControls = document.createElement('div');
         noteTopControls.className = 'note-top-controls';
@@ -590,9 +831,7 @@ document.addEventListener('DOMContentLoaded', function() {
             noteTextSpan.contentEditable = true;
             noteTextSpan.focus();
             noteTextSpan.dataset.originalText = noteTextSpan.textContent;
-        });
-
-        noteTextSpan.addEventListener('blur', async () => {
+        });        noteTextSpan.addEventListener('blur', async () => {
             noteTextSpan.contentEditable = false;
             const newText = noteTextSpan.textContent.trim();
             const oldText = noteBox.dataset.text;
@@ -602,9 +841,16 @@ document.addEventListener('DOMContentLoaded', function() {
             noteBox.dataset.text = newText;
             if (newText) {
                 noteMeta.textContent = 'Đang tải...';
-                const newWordData = await fetchNoteData(newText);
-                noteBox.dataset.wordData = JSON.stringify(newWordData);
-                updateNoteMeta(noteBox, newWordData);
+                try {
+                    // Khi người dùng tự chỉnh sửa, không áp dụng spell check
+                    const newWordData = await fetchNoteData(newText, false);
+                    noteBox.dataset.wordData = JSON.stringify(newWordData);
+                    updateNoteMeta(noteBox, newWordData);
+                } catch (error) {
+                    console.error('Error fetching data for edited note:', error);
+                    noteBox.dataset.wordData = JSON.stringify({ phrase: {}, words: {} });
+                    noteMeta.textContent = 'Lỗi tải dữ liệu.';
+                }
             } else {
                 noteBox.dataset.wordData = JSON.stringify({ phrase: {}, words: {} });
                 updateNoteMeta(noteBox, { phrase: {}, words: {} });
@@ -628,27 +874,47 @@ document.addEventListener('DOMContentLoaded', function() {
 
         noteBox.appendChild(noteTopControls);
         noteBox.appendChild(noteTextSpan);
-        noteBox.appendChild(noteMeta);
-
-        if (existingWordData) {
+        noteBox.appendChild(noteMeta);        if (existingWordData) {
             noteBox.dataset.wordData = JSON.stringify(existingWordData);
             updateNoteMeta(noteBox, existingWordData);
         } else if (shouldFetch && text) {
             noteMeta.textContent = 'Đang tải...';
-            fetchNoteData(text).then(wordData => {
-                noteBox.dataset.wordData = JSON.stringify(wordData);
-                updateNoteMeta(noteBox, wordData);
-                saveNotes();
-            }).catch(error => {
-                console.error("Error fetching note data on add:", error);
-                noteMeta.textContent = 'Lỗi tải dữ liệu.';
+            // Khởi tạo wordData mặc định ngay lập tức để tránh undefined
+            noteBox.dataset.wordData = JSON.stringify({ phrase: {}, words: {} });
+              // Chỉ áp dụng spell check cho note mới (shouldFetch = true)
+            fetchNoteData(text, shouldFetch).then(wordData => {
+                // Nếu text được sửa chính tả, cập nhật hiển thị
+                if (wordData.correctedText && wordData.correctedText !== text) {
+                    noteTextSpan.textContent = wordData.correctedText;
+                    noteBox.dataset.text = wordData.correctedText;
+                    console.log(`📝 Spell corrected: "${text}" → "${wordData.correctedText}"`);
+                }
+                
+                // Loại bỏ correctedText khỏi wordData trước khi lưu (nhưng giữ hasTranslationError để hiển thị nút retry)
+                const cleanWordData = { ...wordData };
+                delete cleanWordData.correctedText;
+                
+                noteBox.dataset.wordData = JSON.stringify(cleanWordData);
+                updateNoteMeta(noteBox, cleanWordData);
+                saveNotes();            }).catch(error => {
+                console.error("❌ Error fetching note data on add:", error);
+                // Tạo dữ liệu lỗi để hiển thị nút retry
+                const errorWordData = { 
+                    phrase: {}, 
+                    words: {}, 
+                    hasTranslationError: true,
+                    originalText: text 
+                };
+                noteBox.dataset.wordData = JSON.stringify(errorWordData);
+                updateNoteMeta(noteBox, errorWordData);
                 saveNotes();
             });
-        } else if (!text) {
+        } else {
+            // Luôn đảm bảo có wordData hợp lệ
             noteBox.dataset.wordData = JSON.stringify({ phrase: {}, words: {} });
-            updateNoteMeta(noteBox, { phrase: {}, words: {} });
-        }
+            updateNoteMeta(noteBox, { phrase: {}, words: {} });        }
 
+        // Luôn thêm note mới vào đầu danh sách để đảm bảo mới nhất ở trên
         notesDisplay.insertBefore(noteBox, notesDisplay.firstChild);
         return noteBox;
     }
@@ -667,50 +933,113 @@ document.addEventListener('DOMContentLoaded', function() {
         if (emptyState) {
             notesDisplay.removeChild(emptyState);
         }
-    }
-
-    function saveNotes() {
+    }    function saveNotes() {
         const notes = [];
+        // Lấy notes theo thứ tự từ trên xuống dưới (mới nhất đến cũ nhất)
         document.querySelectorAll('.note-box').forEach(noteBox => {
             try {
-                const wordData = JSON.parse(noteBox.dataset.wordData);
+                // Kiểm tra và xử lý wordData an toàn hơn
+                let wordData = { phrase: {}, words: {} }; // Default value
+                
+                if (noteBox.dataset.wordData && noteBox.dataset.wordData !== 'undefined') {
+                    try {
+                        const parsedData = JSON.parse(noteBox.dataset.wordData);
+                        // Loại bỏ dữ liệu lỗi khi lưu
+                        const cleanData = { ...parsedData };
+                        delete cleanData.hasTranslationError;
+                        delete cleanData.originalText;
+                        wordData = cleanData;
+                    } catch (parseError) {
+                        console.warn("Invalid JSON in wordData for note:", noteBox.dataset.text, "- using default");
+                        wordData = { phrase: {}, words: {} };
+                    }
+                }
+                
                 notes.push({
-                    text: noteBox.dataset.text,
-                    fontSize: noteBox.dataset.fontSize,
-                    wordData: wordData
+                    text: noteBox.dataset.text || '',
+                    fontSize: noteBox.dataset.fontSize || initialFontSize,
+                    wordData: wordData,
+                    timestamp: noteBox.dataset.timestamp || Date.now() // Thêm timestamp để sắp xếp
                 });
             } catch (e) {
-                console.error("Error parsing wordData during save for note:", noteBox.dataset.text, e);
+                console.error("Error processing note during save:", noteBox.dataset.text, e);
                 notes.push({
-                    text: noteBox.dataset.text,
-                    fontSize: noteBox.dataset.fontSize,
-                    wordData: { phrase: {}, words: {} }
+                    text: noteBox.dataset.text || '',
+                    fontSize: noteBox.dataset.fontSize || initialFontSize,
+                    wordData: { phrase: {}, words: {} },
+                    timestamp: Date.now()
                 });
             }
         });
+        
+        // Lưu notes theo thứ tự mới nhất trước (từ trên xuống)
         localStorage.setItem('notesApp', JSON.stringify({
             notes: notes,
             initialFontSize: initialFontSize
         }));
-    }
-
-    // Load notes từ localStorage và hiển thị theo thứ tự mới nhất trước
-    function loadNotes() {
-        const notes = JSON.parse(localStorage.getItem('notes') || '[]');
-        const notesContainer = document.querySelector('.notes');
-        notesContainer.innerHTML = '';
         
-        // Hiển thị từ mới đến cũ
-        notes.reverse().forEach(note => {
-            const noteBox = createNoteElement(note.text, note.languageCode, note.id);
-            notesContainer.appendChild(noteBox);
-        });
-    }
-
-    function addNoteBox(text, fontSize, existingWordData = null, shouldFetch = true) {
+        console.log(`💾 Saved ${notes.length} notes in newest-first order`);
+    }    // Load notes từ localStorage và hiển thị theo thứ tự mới nhất trước
+    function loadNotes() {
+        try {
+            const savedData = localStorage.getItem('notesApp');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                
+                // Khôi phục fontSize ban đầu
+                if (data.initialFontSize) {
+                    initialFontSize = data.initialFontSize;
+                    initialFontSizeInput.value = initialFontSize;
+                }
+                
+                // Khôi phục notes
+                if (data.notes && Array.isArray(data.notes)) {
+                    notesDisplay.innerHTML = '';
+                    
+                    // Sắp xếp notes theo timestamp (mới nhất trước) để đảm bảo thứ tự đúng
+                    const sortedNotes = data.notes.sort((a, b) => {
+                        const timestampA = a.timestamp || 0;
+                        const timestampB = b.timestamp || 0;
+                        return timestampB - timestampA; // Mới nhất trước
+                    });
+                    
+                    console.log(`📂 Loading ${sortedNotes.length} notes in newest-first order`);
+                    
+                    // Thêm notes theo thứ tự đã sắp xếp (mới nhất sẽ được thêm vào đầu)
+                    sortedNotes.forEach((note, index) => {
+                        const noteBox = createNoteElement(
+                            note.text, 
+                            note.fontSize || initialFontSize, 
+                            note.wordData, 
+                            false // Không fetch lại dữ liệu khi load
+                        );
+                        
+                        // Thêm timestamp vào noteBox để theo dõi
+                        if (noteBox) {
+                            noteBox.dataset.timestamp = note.timestamp || Date.now() - index;
+                            notesDisplay.appendChild(noteBox); // Thêm vào cuối để giữ thứ tự
+                        }
+                    });
+                }
+            }
+            
+            // Hiển thị empty state nếu không có notes
+            if (notesDisplay.children.length === 0) {
+                showEmptyState();
+            }
+        } catch (error) {
+            console.error('Error loading notes:', error);
+            showEmptyState();
+        }
+    }    function addNoteBox(text, fontSize, existingWordData = null, shouldFetch = true) {
         const noteBox = createNoteElement(text, fontSize, existingWordData, shouldFetch);
         if (noteBox) {
-            notesDisplay.insertBefore(noteBox, notesDisplay.firstChild);
+            // Đảm bảo note mới luôn ở đầu
+            if (notesDisplay.firstChild && !notesDisplay.firstChild.classList.contains('empty-state')) {
+                notesDisplay.insertBefore(noteBox, notesDisplay.firstChild);
+            } else {
+                notesDisplay.appendChild(noteBox);
+            }
             return noteBox;
         }
         return null;
@@ -721,7 +1050,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!text) return;
 
         const noteBox = createNoteElement(text, languageCode, id);
-        const notesContainer = document.querySelector('.notes');
+        const notesContainer = document.querySelector('#notesDisplay');
         // Thêm note mới lên đầu danh sách
         notesContainer.insertBefore(noteBox, notesContainer.firstChild);
         saveNotes();
@@ -760,16 +1089,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             // Enter trên PC và mobile: xuống dòng (mặc định)
         }
-    });
-
-    initialFontSizeInput.addEventListener('change', () => {
+    });    initialFontSizeInput.addEventListener('change', () => {
         initialFontSize = parseInt(initialFontSizeInput.value, 10);
+        saveUIState(); // Lưu trạng thái UI khi thay đổi
     });
 
     hideInputBtn.addEventListener('click', () => {
         inputControls.classList.toggle('hidden');
         hideInputBtn.querySelector('span').textContent = 
             inputControls.classList.contains('hidden') ? 'Show' : 'Hide';
+        saveUIState(); // Lưu trạng thái UI khi thay đổi
     });
 
     fullscreenBtn.addEventListener('click', () => {
@@ -795,7 +1124,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    exportBtn.addEventListener('click', () => {
+    exportBtn.addEventListener('click', async () => {
         const date = new Date().toLocaleDateString('en-US', {
             day: '2-digit',
             month: 'short',
@@ -803,7 +1132,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         const notesHtml = notesDisplay.innerHTML;
         const styles = document.querySelector('style').textContent;
-        const htmlContent = createHtmlContent(date, notesHtml, styles);
+        const htmlContent = await createHtmlContent(date, notesHtml, styles);
         const blob = new Blob([htmlContent], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -825,29 +1154,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const reader = new FileReader();
         reader.onload = async (event) => {
-            const content = event.target.result;
-            if (file.name.endsWith('.html')) {
+            const content = event.target.result;            if (file.name.endsWith('.html')) {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(content, 'text/html');
                 const importedNotes = doc.querySelectorAll('.note-box');
                 if (importedNotes.length > 0) {
                     notesDisplay.innerHTML = '';
-                    importedNotes.forEach(note => {
+                    
+                    // Chuyển đổi NodeList thành Array và đảo ngược để import đúng thứ tự
+                    const notesArray = Array.from(importedNotes).reverse();
+                    
+                    notesArray.forEach((note, index) => {
                         const text = note.dataset.text;
                         const fontSize = parseInt(note.dataset.fontSize) || initialFontSize;
                         const wordData = note.dataset.wordData ? JSON.parse(note.dataset.wordData) : null;
-                        addNoteBox(text, fontSize, wordData, false);
+                        const timestamp = note.dataset.timestamp || (Date.now() - (notesArray.length - index));
+                        
+                        const noteBox = addNoteBox(text, fontSize, wordData, false);
+                        if (noteBox) {
+                            noteBox.dataset.timestamp = timestamp;
+                        }
                     });
                     saveNotes();
                 }
-            } else if (file.name.endsWith('.json')) {
-                try {
+            } else if (file.name.endsWith('.json')) {                try {
                     const data = JSON.parse(content);
                     notesDisplay.innerHTML = '';
                     if (Array.isArray(data.notes)) {
-                        data.notes.forEach(note => {
-                            addNoteBox(note.text, note.fontSize, note.wordData, false);
+                        // Sắp xếp notes theo timestamp (mới nhất trước) trước khi import
+                        const sortedNotes = data.notes.sort((a, b) => {
+                            const timestampA = a.timestamp || 0;
+                            const timestampB = b.timestamp || 0;
+                            return timestampB - timestampA;
                         });
+                        
+                        // Import notes theo thứ tự mới nhất trước
+                        sortedNotes.reverse().forEach((note, index) => {
+                            const noteBox = addNoteBox(note.text, note.fontSize, note.wordData, false);
+                            if (noteBox) {
+                                noteBox.dataset.timestamp = note.timestamp || (Date.now() - index);
+                            }
+                        });
+                        
                         if (data.initialFontSize) {
                             initialFontSize = parseInt(data.initialFontSize, 10);
                             initialFontSizeInput.value = initialFontSize;
@@ -861,15 +1209,91 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
         reader.readAsText(file);
-    });
-
-    clearAllBtn.addEventListener('click', () => {
+    });    clearAllBtn.addEventListener('click', () => {
         if (confirm('Bạn có chắc muốn xóa tất cả ghi chú?')) {
             notesDisplay.innerHTML = '<div class="empty-state">Chưa có ghi chú nào. Hãy nhập nội dung bên trên để bắt đầu.</div>';
             localStorage.removeItem('notesApp');
+            // Không xóa UI state khi xóa notes
         }
     });
 
-    // Load saved notes when page loads
+    // Xử lý nút tạo đoạn văn mẫu bằng AI
+    if (generateSampleBtn) {
+        console.log('✓ Generate Sample Button found');
+        generateSampleBtn.addEventListener('click', async () => {
+            console.log('🎯 Generate Sample Button clicked!');
+            
+            // Nếu đang loading thì không làm gì
+            if (generateSampleBtn.classList.contains('loading')) {
+                console.log('⏳ Already loading, skipping...');
+                return;
+            }
+            
+            try {
+                // Thêm hiệu ứng loading
+                console.log('🔄 Starting sample generation...');
+                generateSampleBtn.classList.add('loading');
+                generateSampleBtn.title = 'Đang tạo mẫu...';
+                
+                // Kiểm tra xem hàm generateRandomSample có tồn tại không
+                if (typeof generateRandomSample !== 'function') {
+                    throw new Error('generateRandomSample function not found');
+                }
+                
+                // Tạo đoạn văn mẫu
+                const sampleText = await generateRandomSample();
+                console.log('📝 Generated sample:', sampleText);
+                
+                // Đưa vào ô input
+                if (textInput) {
+                    textInput.value = sampleText;
+                    textInput.focus();
+                    
+                    // Hiệu ứng cho thấy text đã được thêm
+                    textInput.style.background = 'linear-gradient(135deg, #e8f5e8, #f0f8ff)';
+                    setTimeout(() => {
+                        textInput.style.background = '';
+                    }, 1000);
+                    
+                    console.log('✅ Sample inserted into input successfully');
+                } else {
+                    console.error('❌ textInput element not found');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error generating sample:', error);
+                
+                // Fallback: thêm một mẫu có sẵn
+                const fallbackSamples = [
+                    'beautiful day',
+                    'look forward to',
+                    'break the ice',
+                    'How are you?',
+                    'take care',
+                    'good morning',
+                    'coffee shop',
+                    'make sense'
+                ];
+                const fallback = fallbackSamples[Math.floor(Math.random() * fallbackSamples.length)];
+                
+                if (textInput) {
+                    textInput.value = fallback;
+                    textInput.focus();
+                    console.log('🔄 Used fallback sample:', fallback);
+                }
+                
+            } finally {
+                // Loại bỏ hiệu ứng loading
+                generateSampleBtn.classList.remove('loading');
+                generateSampleBtn.title = 'Tạo đoạn văn mẫu bằng AI';
+                console.log('🏁 Sample generation completed');
+            }
+        });
+    } else {
+        console.error('❌ Generate Sample Button not found! Check HTML ID.');
+    }
+
+    // Load saved notes and UI state when page loads
+    loadUIState();
     loadNotes();
 });
