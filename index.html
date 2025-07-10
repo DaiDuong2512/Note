@@ -82,6 +82,75 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
+            position: relative;
+        }
+
+        .generate-sample-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #4285f4, #34a853, #fbbc05, #ea4335);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 2;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .generate-sample-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .generate-sample-btn:active {
+            transform: scale(0.95);
+        }
+
+        .generate-sample-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+            animation: sparkle 2s infinite;
+        }
+
+        .generate-sample-btn .tooltip {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .generate-sample-btn:hover .tooltip {
+            opacity: 1;
+        }
+
+        @keyframes sparkle {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(180deg); }
+        }
+
+        .generate-sample-btn.loading {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
         #textInput {
@@ -584,6 +653,7 @@
 <body>
     <div class="container">
         <div class="toggle-controls">
+            <h3 class="title" style="text-align: left; color: #063e47cc; font-size: 0.9rem; margin-left: 2rem;">Lưu ý, web sử dụng model Gemini 2.0 Flash để dịch, kết quả có thể sai ngữ nghĩa.</h3>
             <button id="hideInputBtn" class="toggle-button" aria-label="Ẩn thanh nhập">
                 <svg viewBox="0 0 24 24">
                     <path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>
@@ -604,6 +674,14 @@
         <div class="input-controls" id="inputControls">
             <div class="input-area">
                 <textarea spellcheck="false" id="textInput" placeholder="Nhập ghi chú của bạn..." aria-label="Nhập ghi chú mới"></textarea>
+                <button id="generateSampleBtn" class="generate-sample-btn" title="Tạo đoạn văn mẫu bằng AI" aria-label="Tạo đoạn văn mẫu bằng AI">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 1l3.09 6.26L22 9l-5.91 5.36L18 21l-6-3.27L6 21l1.91-6.64L2 9l6.91-1.74L12 1z"/>
+                    </svg>
+                    <span class="tooltip">Gemini AI</span>
+                </button>
             </div>
             <div class="controls">
                 <button id="postButton" aria-label="Đăng ghi chú">
@@ -642,6 +720,7 @@
         </div>
     </div>
 
+    <script src="AI.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
