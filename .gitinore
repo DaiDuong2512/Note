@@ -1,0 +1,40 @@
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# API keys and sensitive data
+config.js
+secrets.js
+
+# Keep example files
+!config.example.js
+!.env.example
+
+# Node modules (if using Node.js)
+node_modules/
+
+# Log files
+*.log
+logs/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.temp
