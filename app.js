@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
         'pronoun': 'pron',
         'interjection': 'int'
     };
-    let currentSpeech = null;
+    window.currentSpeech = null;
     let voices = [];
     let initialFontSize = parseInt(initialFontSizeInput.value, 10);
     
@@ -83,12 +83,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 500); // Debounce 500ms để tránh lưu quá nhiều
     });
 
-    function stopSpeaking() {
-        if (currentSpeech) {
+    window.stopSpeaking = function() {
+        if (window.currentSpeech) {
             speechSynthesis.cancel();
-            currentSpeech = null;
+            window.currentSpeech = null;
         }
-    }
+    };
 
     // Khởi tạo voices
     function initVoices() {
@@ -105,45 +105,84 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Hàm lấy giọng đọc phù hợp
+    // Hàm lấy giọng đọc phù hợp (ưu tiên giọng nam)
     async function getVoice() {
         await initVoices();
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
         const isAndroid = /Android/.test(navigator.userAgent);
         const isWindows = /Windows/.test(navigator.userAgent);
+        const isMac = /Macintosh|MacIntel|MacPPC|Mac68K/.test(navigator.userAgent) && !window.MSStream;
         
         let preferredVoice;
         
         if (isIOS) {
-            // iOS: ưu tiên Samantha hoặc giọng en-US
-            preferredVoice = voices.find(voice => 
-                voice.name.includes('Samantha') || 
-                (voice.lang === 'en-US' && voice.name.includes('Siri'))
+            // iOS: ưu tiên giọng nam như Aaron, Fred, Alex
+            preferredVoice = voices.find(voice =>
+                voice.lang === 'en-US' && (
+                    voice.name.includes('Aaron') ||
+                    voice.name.includes('Fred') ||
+                    voice.name.includes('Alex') ||
+                    voice.name.includes('Daniel')
+                )
             );
         } else if (isAndroid) {
-            // Android: ưu tiên Google US English
-            preferredVoice = voices.find(voice => 
-                voice.lang === 'en-US' && voice.name.includes('Google US English')
+            // Android: ưu tiên Google US English Male
+            preferredVoice = voices.find(voice =>
+                voice.lang === 'en-US' && (
+                    voice.name.includes('Google US English Male') ||
+                    voice.name.includes('Male') ||
+                    voice.name.includes('Google US English')
+                )
             );
         } else if (isWindows) {
-            // Windows: ưu tiên Microsoft David/Zira
-            preferredVoice = voices.find(voice => 
+            // Windows: ưu tiên Microsoft David (giọng nam)
+            preferredVoice = voices.find(voice =>
                 voice.lang === 'en-US' && (
-                    voice.name.includes('David') || 
-                    voice.name.includes('Zira')
+                    voice.name.includes('David') ||
+                    voice.name.includes('Mark') ||
+                    voice.name.includes('Microsoft David')
+                )
+            );
+        } else if (isMac) {
+            // Mac: ưu tiên giọng nam như Alex, Fred, Daniel
+            preferredVoice = voices.find(voice =>
+                voice.lang === 'en-US' && (
+                    voice.name.includes('Alex') ||
+                    voice.name.includes('Fred') ||
+                    voice.name.includes('Daniel') ||
+                    voice.name.includes('Aaron')
                 )
             );
         }
         
-        // Fallback to any en-US voice if preferred voice not found
+        // Fallback: tìm bất kỳ giọng nam nào với en-US
+        if (!preferredVoice) {
+            preferredVoice = voices.find(voice =>
+                voice.lang === 'en-US' && (
+                    voice.name.toLowerCase().includes('male') ||
+                    voice.name.includes('David') ||
+                    voice.name.includes('Alex') ||
+                    voice.name.includes('Fred') ||
+                    voice.name.includes('Aaron') ||
+                    voice.name.includes('Daniel') ||
+                    voice.name.includes('Mark')
+                )
+            );
+        }
+        
+        // Cuối cùng fallback to any en-US voice
         return preferredVoice || voices.find(voice => voice.lang === 'en-US');
     }
 
     // Khởi tạo voices khi trang load
     initVoices();
 
-    async function speakNote(text, noteBox, speakButton) {
-        stopSpeaking();
+    // Đưa hàm speakNote ra ngoài để có thể truy cập từ các elements
+    window.speakNote = async function(text, noteBox, speakButton) {
+        if (window.currentSpeech) {
+            speechSynthesis.cancel();
+            window.currentSpeech = null;
+        }
         
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'en-US';
@@ -172,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 speakButton.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="20px" height="20px"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path></svg>';
                 speakButton.title = 'Đọc ghi chú';
             }
-            currentSpeech = null;
+            window.currentSpeech = null;
         };
 
         utterance.onerror = (event) => {
@@ -182,12 +221,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 speakButton.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="20px" height="20px"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path></svg>';
                 speakButton.title = 'Đọc ghi chú';
             }
-            currentSpeech = null;
+            window.currentSpeech = null;
         };
 
-        currentSpeech = utterance;
+        window.currentSpeech = utterance;
         speechSynthesis.speak(utterance);
-    }
+    };
 
     // Xử lý nút tạo đoạn văn mẫu bằng AI
     if (generateSampleBtn) {
@@ -627,12 +666,12 @@ function createNoteElement(text, fontSize, existingWordData = null, shouldFetch 
     speakBtn.setAttribute('aria-label', 'Đọc ghi chú');
     speakBtn.addEventListener('click', () => {
         if (noteBox.dataset.isSpeaking === 'true') {
-            stopSpeaking();
+            window.stopSpeaking();
             noteBox.dataset.isSpeaking = 'false';
             speakBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="20px" height="20px"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path></svg>';
             speakBtn.title = 'Đọc ghi chú';
         } else {
-            speakNote(noteBox.dataset.text, noteBox, speakBtn);
+            window.speakNote(noteBox.dataset.text, noteBox, speakBtn);
         }
     });
 
@@ -642,7 +681,7 @@ function createNoteElement(text, fontSize, existingWordData = null, shouldFetch 
     removeBtn.title = 'Xóa ghi chú';
     removeBtn.setAttribute('aria-label', 'Xóa ghi chú');
     removeBtn.addEventListener('click', () => {
-        stopSpeaking();
+        window.stopSpeaking();
         const notesDisplay = document.getElementById('notesDisplay');
         notesDisplay.removeChild(noteBox);
         if (notesDisplay.children.length === 0 || (notesDisplay.children.length === 1 && notesDisplay.firstChild.classList.contains('empty-state'))) {
@@ -1011,8 +1050,218 @@ document.addEventListener('DOMContentLoaded', function() {
         const notesHtml = notesDisplay.innerHTML;
         const styles = document.querySelector('style').textContent;
         
-        // Create simple HTML export
-        const htmlContent = `<!DOCTYPE html><html><head><title>Notes - ${date}</title><style>${styles}</style></head><body><div class="container"><div class="notes-area"><div id="notesDisplay">${notesHtml}</div></div></div></body></html>`;
+        // Create comprehensive HTML export with speech functionality
+        const htmlContent = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghi chú - ${date}</title>
+    <style>
+        ${styles}
+        .font-size-control {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 10px;
+        }
+        .font-size-label {
+            font-weight: bold;
+            color: #202124;
+            font-size: 14px;
+        }
+        .font-size-input {
+            width: 50px;
+            padding: 4px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="notes-area">
+            <div id="notesDisplay">${notesHtml}</div>
+        </div>
+    </div>
+    <script>
+        let currentSpeech = null;
+        let voices = [];
+
+        // Hàm khởi tạo voices
+        function initVoices() {
+            return new Promise((resolve) => {
+                voices = speechSynthesis.getVoices();
+                if (voices.length > 0) {
+                    resolve(voices);
+                } else {
+                    speechSynthesis.onvoiceschanged = () => {
+                        voices = speechSynthesis.getVoices();
+                        resolve(voices);
+                    };
+                }
+            });
+        }
+
+        // Hàm lấy giọng đọc phù hợp (ưu tiên giọng nam)
+        async function getVoice() {
+            await initVoices();
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isAndroid = /Android/.test(navigator.userAgent);
+            const isWindows = /Windows/.test(navigator.userAgent);
+            const isMac = /Macintosh|MacIntel|MacPPC|Mac68K/.test(navigator.userAgent) && !window.MSStream;
+            
+            let preferredVoice;
+            
+            if (isIOS) {
+                // iOS: ưu tiên giọng nam như Aaron, Fred, Alex
+                preferredVoice = voices.find(voice =>
+                    voice.lang === 'en-US' && (
+                        voice.name.includes('Aaron') ||
+                        voice.name.includes('Fred') ||
+                        voice.name.includes('Alex') ||
+                        voice.name.includes('Daniel')
+                    )
+                );
+            } else if (isAndroid) {
+                // Android: ưu tiên Google US English Male
+                preferredVoice = voices.find(voice =>
+                    voice.lang === 'en-US' && (
+                        voice.name.includes('Google US English Male') ||
+                        voice.name.includes('Male') ||
+                        voice.name.includes('Google US English')
+                    )
+                );
+            } else if (isWindows) {
+                // Windows: ưu tiên Microsoft David (giọng nam)
+                preferredVoice = voices.find(voice =>
+                    voice.lang === 'en-US' && (
+                        voice.name.includes('David') ||
+                        voice.name.includes('Mark') ||
+                        voice.name.includes('Microsoft David')
+                    )
+                );
+            } else if (isMac) {
+                // Mac: ưu tiên giọng nam như Alex, Fred, Daniel
+                preferredVoice = voices.find(voice =>
+                    voice.lang === 'en-US' && (
+                        voice.name.includes('Alex') ||
+                        voice.name.includes('Fred') ||
+                        voice.name.includes('Daniel') ||
+                        voice.name.includes('Aaron')
+                    )
+                );
+            }
+            
+            // Fallback: tìm bất kỳ giọng nam nào với en-US
+            if (!preferredVoice) {
+                preferredVoice = voices.find(voice =>
+                    voice.lang === 'en-US' && (
+                        voice.name.toLowerCase().includes('male') ||
+                        voice.name.includes('David') ||
+                        voice.name.includes('Alex') ||
+                        voice.name.includes('Fred') ||
+                        voice.name.includes('Aaron') ||
+                        voice.name.includes('Daniel') ||
+                        voice.name.includes('Mark')
+                    )
+                );
+            }
+            
+            // Cuối cùng fallback to any en-US voice
+            return preferredVoice || voices.find(voice => voice.lang === 'en-US');
+        }
+
+        function stopSpeaking() {
+            if (currentSpeech) {
+                speechSynthesis.cancel();
+                currentSpeech = null;
+            }
+        }
+
+        async function speakNote(text, noteBox, speakButton) {
+            stopSpeaking();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.7; // Tốc độ đọc chậm
+            
+            try {
+                const voice = await getVoice();
+                if (voice) {
+                    utterance.voice = voice;
+                    console.log('Selected voice:', voice.name);
+                }
+            } catch (error) {
+                console.warn('Không thể tìm giọng đọc phù hợp:', error);
+            }
+
+            // Cập nhật trạng thái nút trước khi phát âm thanh
+            if (noteBox) noteBox.dataset.isSpeaking = 'true';
+            if (speakButton) {
+                speakButton.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="20px" height="20px"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>';
+                speakButton.title = 'Dừng đọc';
+            }
+
+            utterance.onend = () => {
+                if (noteBox) noteBox.dataset.isSpeaking = 'false';
+                if (speakButton) {
+                    speakButton.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="20px" height="20px"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path></svg>';
+                    speakButton.title = 'Đọc ghi chú';
+                }
+                currentSpeech = null;
+            };
+
+            utterance.onerror = (event) => {
+                console.error('Lỗi đọc:', event.error);
+                if (noteBox) noteBox.dataset.isSpeaking = 'false';
+                if (speakButton) {
+                    speakButton.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="20px" height="20px"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path></svg>';
+                    speakButton.title = 'Đọc ghi chú';
+                }
+                currentSpeech = null;
+            };
+
+            // Đảm bảo currentSpeech được set và phát âm chỉ một lần
+            currentSpeech = utterance;
+            setTimeout(() => {
+                speechSynthesis.speak(utterance);
+            }, 100); // Thêm delay nhỏ để đảm bảo giọng đọc được áp dụng
+        }
+
+        // Xử lý chỉnh cỡ chữ
+        document.querySelectorAll('.font-size-input').forEach(input => {
+            input.addEventListener('input', () => {
+                const noteBox = input.closest('.note-box');
+                const noteText = noteBox.querySelector('.note-text');
+                const newSize = input.value;
+                noteText.style.setProperty('--original-font-size', newSize + 'px');
+                noteText.style.fontSize = newSize + 'px';
+            });
+        });
+
+        // Xử lý nút đọc
+        document.querySelectorAll('.speak-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const noteBox = btn.closest('.note-box');
+                if (noteBox.dataset.isSpeaking === 'true') {
+                    stopSpeaking();
+                    noteBox.dataset.isSpeaking = 'false';
+                    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="20px" height="20px"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path></svg>';
+                    btn.title = 'Đọc ghi chú';
+                } else {
+                    speakNote(noteBox.dataset.text, noteBox, btn);
+                }
+            });
+        });
+
+        // Khởi tạo voices khi trang load
+        initVoices();
+    </script>
+</body>
+</html>`;
         
         const blob = new Blob([htmlContent], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
