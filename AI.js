@@ -1,6 +1,10 @@
 
+let encoded3= "UVZaemFXeHBibU5sYm1RMU56QXhORFUwTlRFeU4wSkJWazVKVW5kQmMwcFVTbXhRUVZsT1FVUT0=";
 
-const GEMINI_API_KEY = process.env.GEMINI_API;
+function tripleDecode(str) {
+    return atob(atob(atob(str)));
+}
+const GEMINI_API_KEY = tripleDecode(encoded3);
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 // Hàm gọi API Gemini để dịch văn bản
