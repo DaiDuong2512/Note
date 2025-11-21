@@ -1,8 +1,7 @@
-
 function decodeObfuscated(str) {
     let s = atob(atob(atob(str)));
     s = s.split("").reverse().join("");
-    let xorKey = 73;
+    let xorKey = 47;
     let out = "";
     for (let i = 0; i < s.length; i++) {
         out += String.fromCharCode(s.charCodeAt(i) ^ xorKey);
