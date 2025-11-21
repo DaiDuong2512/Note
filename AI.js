@@ -1,23 +1,15 @@
 
 function decodeObfuscated(str) {
-    // 1. Base64 3 lớp
     let s = atob(atob(atob(str)));
-
-    // 2. Đảo ngược chuỗi
     s = s.split("").reverse().join("");
-
-    // 3. XOR lại giá trị
     let xorKey = 73;
     let out = "";
     for (let i = 0; i < s.length; i++) {
         out += String.fromCharCode(s.charCodeAt(i) ^ xorKey);
     }
-
     return out;
 }
-
 const OBF_API = "Rk1UeFZUVkJURndNR0JRRWxZUFZaWVZrR3hjbVpJQ0F6bFNaMUpzWkV0V1ZGWlpURmh4UWpJeU1HVlNZVlp5TWpWUlJFSTRRVk5CYTFSbVdtVjJjR1ZEUTNKb1QxWnhXbkpPVkVreVZXMTRNVTlWY0V0aFZURnhWR3hHVWxOVlpFRkRSV2RYYkVFd1VYZGtNRkZFU1RWTVJFVjRWMFpXY2xGWFNURk5WRUY0WVZkU1IxWjNVRk5PUkZVeVdWVTViRmxxUVRGT1dFcFdWMGhrZDJKR1VURk5SRUY0WTBWT2EyRnFRVFZNUkVWMFYwZGtibHBIVGtOaFNGSldUVlZTVjFZeFJUTk5SRUYzWTBkS2RHTkhlSE5rU0ZKS1RVUnNkRlZZUWtkTk1ERkdWVU5XY2xaNlRUVk5SRUYzWTBVd2NGSklRbFpOVkVFeVZGaE9hMUl6VW5OVVJFVTFWVEpTVjFKdFRtZFRWVTVIVWpKT2ExSXpVbk5VVkVWNVRrUmpNMTVYVWtKalYxSnZTWTl3WkV4VWJFWTFXVE5SZDFZeFNYUk5WRUYzWkZod2RVOVVRbHBNUkVGM1kzRmtkbVZFU1hsWlZFRm1UVlJqTVZkSFNtbFRNVTVUVXpGT2FtSXpVbk5VVkVWNlZESlNiMDFIVm5OYVIwcEVZak5TZG1WWVJUVk1SRVkxWTBkT2NGUnFRbFpOVkVWNlYyeG9WMDFIVm5OYVIwMHdZak5TZG1WWWJHbE1hbFYzVWxST2ExSXpVbk5VVkVWNFV6RlNRbEpxU2pSaWJZZ3pUVUV5TWxaVVZXdE1WMVZ0VlVSV2FTdERPRGQwWWxsd1pFRT0=";
-
 const GEMINI_API_KEY = decodeObfuscated(OBF_API);
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
