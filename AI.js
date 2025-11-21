@@ -1,6 +1,6 @@
 
 
-const GEMINI_API_KEY = secrets.GEMINI_API;
+const GEMINI_API_KEY = process.env.GEMINI_API;
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 // Hàm gọi API Gemini để dịch văn bản
